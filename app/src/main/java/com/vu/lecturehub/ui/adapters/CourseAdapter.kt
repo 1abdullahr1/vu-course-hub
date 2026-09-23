@@ -12,6 +12,7 @@ import com.vu.lecturehub.databinding.ItemCourseCardBinding
 
 class CourseAdapter(
     private val onCourseClick: (Course) -> Unit,
+    private val onPlayClick: (Course) -> Unit,
     private val onBookmarkClick: (Course) -> Unit
 ) : ListAdapter<Course, CourseAdapter.CourseViewHolder>(CourseDiffCallback()) {
 
@@ -49,15 +50,25 @@ class CourseAdapter(
 
             // Thumbnail loading with Coil
             binding.thumbnail.load(course.thumbnailUrl) {
-                crossfade(true)
+                crossfade(150)
                 placeholder(R.drawable.playlist_placeholder)
                 error(R.drawable.playlist_placeholder)
             }
 
+            // Tap on thumbnail or play button -> plays video immediately
+            binding.cardThumbnail.setOnClickListener {
+                onPlayClick(course)
+            }
+            binding.btnThumbnailPlay.setOnClickListener {
+                onPlayClick(course)
+            }
+
+            // Tap on card body -> opens course overview
             binding.root.setOnClickListener {
                 onCourseClick(course)
             }
 
+            // Bookmark toggle
             binding.btnBookmark.setOnClickListener {
                 onBookmarkClick(course)
             }

@@ -16,12 +16,15 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.vu.lecturehub.R
 import com.vu.lecturehub.data.model.Course
 import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.data.repository.CourseRepository
 import com.vu.lecturehub.databinding.ActivityPlayerBinding
 import com.vu.lecturehub.ui.adapters.LectureAdapter
+import com.vu.lecturehub.ui.adapters.PlayerHeaderAdapter
 import kotlinx.coroutines.launch
 
 class PlayerActivity : AppCompatActivity() {
@@ -31,6 +34,7 @@ class PlayerActivity : AppCompatActivity() {
     private var currentCourse: Course? = null
     private var currentLecture: Lecture? = null
     private var currentLectures: List<Lecture> = emptyList()
+    private lateinit var playerHeaderAdapter: PlayerHeaderAdapter
     private lateinit var queueAdapter: LectureAdapter
     private var currentLoadedVideoId: String? = null
 
@@ -52,19 +56,18 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         if (currentLecture == null) {
+            val lectureIndex = if (currentCourse!!.lastWatchedLectureIndex > 0) currentCourse!!.lastWatchedLectureIndex else 1
             currentLecture = Lecture(
                 playlistId = currentCourse!!.playlistId,
-                lectureIndex = 1,
-                title = "Lecture 01 - ${currentCourse!!.title}",
-                videoId = currentCourse!!.firstVideoId,
+                lectureIndex = lectureIndex,
+                title = "Lecture ${String.format("%02d", lectureIndex)} - ${currentCourse!!.title}",
+                videoId = if (lectureIndex == 1) currentCourse!!.firstVideoId else null,
                 thumbnailUrl = currentCourse!!.thumbnailUrl
             )
         }
 
-        updateLectureUI(currentCourse!!, currentLecture!!)
+        setupRecyclerView(currentCourse!!, currentLecture!!)
         setupPlayerWebView()
-        setupPlaylistQueue(currentCourse!!)
-        setupExternalButton()
         loadRealLectures(currentCourse!!)
 
         // Start playing initial video immediately
@@ -74,25 +77,34 @@ class PlayerActivity : AppCompatActivity() {
         loadVideoInPlayer(initialVideoId)
     }
 
-    private fun updateLectureUI(course: Course, lecture: Lecture) {
-        val formattedNum = String.format("%02d", lecture.lectureIndex)
-        binding.tvPlayerCourseCode.text = "${course.courseCode ?: "VU"} - Lecture #$formattedNum"
-        binding.tvPlayerLectureTitle.text = lecture.title
-        binding.tvPlayerCourseTitle.text = "${course.department} • Virtual University of Pakistan"
+    private fun setupRecyclerView(course: Course, lecture: Lecture) {
+        playerHeaderAdapter = PlayerHeaderAdapter(course, lecture) {
+            openCurrentOnYoutube()
+        }
+
+        currentLectures = repository.generateLectures(course)
+        queueAdapter = LectureAdapter(currentLectures) { selectedLecture ->
+            switchLecture(selectedLecture)
+        }
+
+        val concatAdapter = ConcatAdapter(playerHeaderAdapter, queueAdapter)
+
+        binding.rvPlayerContent.apply {
+            layoutManager = LinearLayoutManager(this@PlayerActivity)
+            adapter = concatAdapter
+            setHasFixedSize(true)
+        }
 
         lifecycleScope.launch {
             repository.updateWatchProgress(course.playlistId, lecture.lectureIndex)
         }
     }
 
-    private fun setupExternalButton() {
-        binding.btnOpenYoutube.setOnClickListener {
-            val vid = currentLecture?.videoId
-                ?: currentCourse?.firstVideoId
-            if (!vid.isNullOrEmpty()) {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=$vid"))
-                startActivity(intent)
-            }
+    private fun openCurrentOnYoutube() {
+        val vid = currentLecture?.videoId ?: currentCourse?.firstVideoId
+        if (!vid.isNullOrEmpty()) {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=$vid"))
+            startActivity(intent)
         }
     }
 
@@ -100,7 +112,6 @@ class PlayerActivity : AppCompatActivity() {
     private fun setupPlayerWebView() {
         val webView = binding.playerWebView
 
-        // Crucial for YouTube: Enable third-party cookies for session tokens & embed verification
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
@@ -178,31 +189,49 @@ class PlayerActivity : AppCompatActivity() {
                                 playerVars: {
                                     'autoplay': 1,
                                     'playsinline': 1,
-                                    'controls': 1,
                                     'rel': 0,
-                                    'enablejsapi': 1,
+                                    'modestbranding': 1,
+                                    'controls': 1,
                                     'fs': 1,
+                                    'enablejsapi': 1,
                                     'origin': '$appOrigin'
                                 },
                                 events: {
-                                    'onReady': function(e) {
-                                        try { e.target.playVideo(); } catch(err) {}
-                                    },
-                                    'onStateChange': function(e) {
-                                        if (e.data === 0 && window.AndroidBridge) {
-                                            window.AndroidBridge.onVideoEnded();
-                                        }
-                                    }
+                                    'onReady': onPlayerReady,
+                                    'onStateChange': onPlayerStateChange,
+                                    'onError': onPlayerError
                                 }
                             });
-                        } catch(e) {}
+                        } catch(e) {
+                            fallbackToEmbed('$videoId');
+                        }
                     }
 
-                    function switchVideo(newId) {
+                    function onPlayerReady(event) {
+                        event.target.playVideo();
+                    }
+
+                    function onPlayerStateChange(event) {
+                        if (event.data === 0) { // ENDED
+                            if (window.AndroidBridge) {
+                                window.AndroidBridge.onVideoEnded();
+                            }
+                        }
+                    }
+
+                    function onPlayerError(event) {
+                        fallbackToEmbed('$videoId');
+                    }
+
+                    function fallbackToEmbed(vid) {
+                        document.body.innerHTML = '<iframe id="player" src="https://www.youtube-nocookie.com/embed/' + vid + '?autoplay=1&playsinline=1&rel=0&controls=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+                    }
+
+                    function switchVideo(vid) {
                         if (player && typeof player.loadVideoById === 'function') {
-                            player.loadVideoById(newId, 0);
+                            player.loadVideoById(vid);
                         } else {
-                            location.href = "https://www.youtube.com/embed/" + newId + "?autoplay=1&playsinline=1&controls=1&rel=0&enablejsapi=1&origin=$appOrigin";
+                            fallbackToEmbed(vid);
                         }
                     }
                 </script>
@@ -215,20 +244,8 @@ class PlayerActivity : AppCompatActivity() {
             html,
             "text/html",
             "UTF-8",
-            null
+            "https://www.youtube.com"
         )
-    }
-
-    private fun setupPlaylistQueue(course: Course) {
-        currentLectures = repository.generateLectures(course)
-        queueAdapter = LectureAdapter(currentLectures) { selectedLecture ->
-            switchLecture(selectedLecture)
-        }
-
-        binding.rvPlayerLectures.apply {
-            layoutManager = LinearLayoutManager(this@PlayerActivity)
-            this.adapter = queueAdapter
-        }
     }
 
     private fun loadRealLectures(course: Course) {
@@ -241,7 +258,7 @@ class PlayerActivity : AppCompatActivity() {
                     val matching = real.find { it.lectureIndex == currentLecture?.lectureIndex } ?: real.firstOrNull()
                     if (matching?.videoId != null) {
                         currentLecture = matching
-                        updateLectureUI(course, matching)
+                        playerHeaderAdapter.updateLecture(matching)
                         switchLecture(matching)
                     }
                 }
@@ -251,7 +268,10 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun switchLecture(lecture: Lecture) {
         currentLecture = lecture
-        updateLectureUI(currentCourse!!, lecture)
+        playerHeaderAdapter.updateLecture(lecture)
+        lifecycleScope.launch {
+            repository.updateWatchProgress(currentCourse!!.playlistId, lecture.lectureIndex)
+        }
         val vid = lecture.videoId ?: currentCourse?.firstVideoId
         if (!vid.isNullOrEmpty() && vid != currentLoadedVideoId) {
             currentLoadedVideoId = vid
@@ -280,6 +300,16 @@ class PlayerActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+    }
+
+    override fun finish() {
+        super.finish()
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 
     override fun onPause() {

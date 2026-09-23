@@ -126,6 +126,7 @@ class HomeFragment : Fragment() {
                 putExtra("EXTRA_LECTURE", lecture)
             }
             startActivity(intent)
+            activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         // Clicking the card itself opens the course syllabus/detail page
@@ -139,6 +140,7 @@ class HomeFragment : Fragment() {
             putExtra("EXTRA_COURSE", course)
         }
         startActivity(intent)
+        activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     override fun onDestroyView() {

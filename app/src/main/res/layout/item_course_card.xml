@@ -21,6 +21,9 @@
             android:id="@+id/card_thumbnail"
             android:layout_width="140dp"
             android:layout_height="0dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
             app:cardCornerRadius="10dp"
             app:cardElevation="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -35,6 +38,18 @@
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
                 tools:srcCompat="@drawable/playlist_placeholder" />
+
+            <!-- Circular Play Button Overlay -->
+            <ImageView
+                android:id="@+id/btn_thumbnail_play"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_card_play_circle"
+                android:contentDescription="@string/play"
+                android:padding="9dp"
+                android:src="@drawable/ic_play"
+                app:tint="#FFFFFF" />
 
             <!-- Video Count Badge Overlay -->
             <FrameLayout

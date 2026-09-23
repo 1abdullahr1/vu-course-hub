@@ -15,7 +15,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.vu.lecturehub.R
 import com.vu.lecturehub.data.model.Course
 import com.vu.lecturehub.data.model.Department
+import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.data.model.SkillDefinitions
+import com.vu.lecturehub.data.repository.CourseRepository
 import com.vu.lecturehub.databinding.FragmentCoursesBinding
 import com.vu.lecturehub.ui.MainViewModel
 import com.vu.lecturehub.ui.adapters.CourseAdapter
@@ -23,6 +25,7 @@ import com.vu.lecturehub.ui.adapters.DiscoverHeaderAdapter
 import com.vu.lecturehub.ui.adapters.SearchSuggestionAdapter
 import com.vu.lecturehub.ui.adapters.SubjectAdapter
 import com.vu.lecturehub.ui.detail.CourseDetailActivity
+import com.vu.lecturehub.ui.player.PlayerActivity
 
 class CoursesFragment : Fragment() {
 
@@ -93,6 +96,7 @@ class CoursesFragment : Fragment() {
         // 3. Course list adapter for catalog items
         courseAdapter = CourseAdapter(
             onCourseClick = { course -> openCourseDetail(course) },
+            onPlayClick = { course -> openPlayerDirectly(course) },
             onBookmarkClick = { course -> viewModel.toggleBookmark(course) }
         )
 
@@ -245,6 +249,26 @@ class CoursesFragment : Fragment() {
             putExtra("EXTRA_COURSE", course)
         }
         startActivity(intent)
+        activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+    }
+
+    private fun openPlayerDirectly(course: Course) {
+        val lectureIndex = if (course.lastWatchedLectureIndex > 0) course.lastWatchedLectureIndex else 1
+        val cached = CourseRepository.getCachedLectures(course.playlistId)
+        val targetLecture = cached?.find { it.lectureIndex == lectureIndex }
+            ?: Lecture(
+                playlistId = course.playlistId,
+                lectureIndex = lectureIndex,
+                title = "Lecture ${String.format("%02d", lectureIndex)} - ${course.title}",
+                videoId = if (lectureIndex == 1) course.firstVideoId else null,
+                thumbnailUrl = course.thumbnailUrl
+            )
+        val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
+            putExtra("EXTRA_COURSE", course)
+            putExtra("EXTRA_LECTURE", targetLecture)
+        }
+        startActivity(intent)
+        activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     override fun onDestroyView() {

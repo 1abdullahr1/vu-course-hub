@@ -57,13 +57,23 @@ class CourseRepository(private val context: Context) {
         courseDao.updateWatchProgress(playlistId, lectureIndex, System.currentTimeMillis())
     }
 
+    companion object {
+        private val playlistCache = java.util.concurrent.ConcurrentHashMap<String, List<Lecture>>()
+
+        fun getCachedLectures(playlistId: String): List<Lecture>? = playlistCache[playlistId]
+    }
+
     suspend fun getCourseById(playlistId: String): Course? = withContext(Dispatchers.IO) {
         courseDao.getCourseById(playlistId)
     }
 
     fun generateLectures(course: Course): List<Lecture> {
+        val cached = playlistCache[course.playlistId]
+        if (!cached.isNullOrEmpty()) {
+            return cached
+        }
         val count = if (course.videoCount > 0) course.videoCount else 30
-        return (1..count).map { idx ->
+        val generated = (1..count).map { idx ->
             val formattedIdx = String.format("%02d", idx)
             Lecture(
                 playlistId = course.playlistId,
@@ -74,9 +84,15 @@ class CourseRepository(private val context: Context) {
                 isCompleted = idx < course.lastWatchedLectureIndex
             )
         }
+        playlistCache.putIfAbsent(course.playlistId, generated)
+        return generated
     }
 
     suspend fun fetchPlaylistVideos(course: Course): List<Lecture> = withContext(Dispatchers.IO) {
+        val cached = playlistCache[course.playlistId]
+        if (!cached.isNullOrEmpty() && cached.any { it.lectureIndex > 1 && it.videoId != null }) {
+            return@withContext cached
+        }
         try {
             val url = URL("https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8")
             val conn = url.openConnection() as HttpURLConnection
