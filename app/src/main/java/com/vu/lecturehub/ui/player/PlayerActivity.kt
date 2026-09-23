@@ -6,8 +6,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.vu.lecturehub.data.model.Course
-import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.data.repository.CourseRepository
 import com.vu.lecturehub.databinding.ActivityPlayerBinding
 import com.vu.lecturehub.ui.adapters.LectureAdapter
@@ -38,7 +38,7 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         updateLectureUI(currentCourse!!, currentLectureIndex)
-        setupYouTubePlayer(currentCourse!!, currentLectureIndex)
+        setupYouTubePlayer(currentCourse!!)
         setupPlaylistQueue(currentCourse!!)
     }
 
@@ -54,17 +54,20 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupYouTubePlayer(course: Course, initialLectureIndex: Int) {
+    private fun setupYouTubePlayer(course: Course) {
         lifecycle.addObserver(binding.youtubePlayerView)
 
-        binding.youtubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+        val iFramePlayerOptions = IFramePlayerOptions.Builder()
+            .controls(1)
+            .listType("playlist")
+            .list(course.playlistId)
+            .build()
+
+        binding.youtubePlayerView.initialize(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 youTubePlayerInstance = youTubePlayer
-                // Load the playlist starting from the selected lecture index (0-indexed)
-                val startIndex = (initialLectureIndex - 1).coerceAtLeast(0)
-                youTubePlayer.loadPlaylist(course.playlistId, startIndex, 0f)
             }
-        })
+        }, iFramePlayerOptions)
     }
 
     private fun setupPlaylistQueue(course: Course) {
@@ -72,8 +75,6 @@ class PlayerActivity : AppCompatActivity() {
         val adapter = LectureAdapter(lectures) { selectedLecture ->
             currentLectureIndex = selectedLecture.lectureIndex
             updateLectureUI(course, currentLectureIndex)
-            val startIndex = (currentLectureIndex - 1).coerceAtLeast(0)
-            youTubePlayerInstance?.loadPlaylist(course.playlistId, startIndex, 0f)
         }
 
         binding.rvPlayerLectures.apply {
