@@ -1,5 +1,7 @@
 package com.vu.lecturehub.ui.player
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -7,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.vu.lecturehub.data.model.Course
 import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.data.repository.CourseRepository
@@ -23,6 +26,7 @@ class PlayerActivity : AppCompatActivity() {
     private var currentLectures: List<Lecture> = emptyList()
     private lateinit var queueAdapter: LectureAdapter
     private var youTubePlayerInstance: YouTubePlayer? = null
+    private var isPlayerReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +58,7 @@ class PlayerActivity : AppCompatActivity() {
         updateLectureUI(currentCourse!!, currentLecture!!)
         setupYouTubePlayer()
         setupPlaylistQueue(currentCourse!!)
+        setupExternalButton()
         loadRealLectures(currentCourse!!)
     }
 
@@ -63,18 +68,34 @@ class PlayerActivity : AppCompatActivity() {
         binding.tvPlayerLectureTitle.text = lecture.title
         binding.tvPlayerCourseTitle.text = "${course.department} • Virtual University of Pakistan"
 
-        // Update watch progress in Room DB
         lifecycleScope.launch {
             repository.updateWatchProgress(course.playlistId, lecture.lectureIndex)
+        }
+    }
+
+    private fun setupExternalButton() {
+        binding.btnOpenYoutube.setOnClickListener {
+            val vid = currentLecture?.videoId
+                ?: currentCourse?.firstVideoId
+            if (!vid.isNullOrEmpty()) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=$vid"))
+                startActivity(intent)
+            }
         }
     }
 
     private fun setupYouTubePlayer() {
         lifecycle.addObserver(binding.youtubePlayerView)
 
-        binding.youtubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+        val iFramePlayerOptions = IFramePlayerOptions.Builder()
+            .controls(1)
+            .rel(0)
+            .build()
+
+        binding.youtubePlayerView.initialize(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 youTubePlayerInstance = youTubePlayer
+                isPlayerReady = true
                 val targetVideoId = currentLecture?.videoId
                     ?: currentCourse?.firstVideoId
 
@@ -88,7 +109,7 @@ class PlayerActivity : AppCompatActivity() {
                     playNextLecture()
                 }
             }
-        })
+        }, iFramePlayerOptions)
     }
 
     private fun setupPlaylistQueue(course: Course) {
@@ -109,12 +130,13 @@ class PlayerActivity : AppCompatActivity() {
             if (real.isNotEmpty()) {
                 currentLectures = real
                 queueAdapter.updateLectures(real)
-                // If the current lecture didn't have videoId, update it from the fetched list
                 if (currentLecture?.videoId.isNullOrEmpty()) {
                     val matching = real.find { it.lectureIndex == currentLecture?.lectureIndex } ?: real.firstOrNull()
                     if (matching?.videoId != null) {
                         currentLecture = matching
-                        youTubePlayerInstance?.loadVideo(matching.videoId, 0f)
+                        if (isPlayerReady) {
+                            youTubePlayerInstance?.loadVideo(matching.videoId, 0f)
+                        }
                     }
                 }
             }
@@ -125,7 +147,7 @@ class PlayerActivity : AppCompatActivity() {
         currentLecture = lecture
         updateLectureUI(currentCourse!!, lecture)
         val vid = lecture.videoId ?: currentCourse?.firstVideoId
-        if (!vid.isNullOrEmpty()) {
+        if (!vid.isNullOrEmpty() && isPlayerReady) {
             youTubePlayerInstance?.loadVideo(vid, 0f)
         }
     }
