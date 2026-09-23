@@ -38,7 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _availableSkills = MutableLiveData<List<FilterItem>>(emptyList())
     val availableSkills: LiveData<List<FilterItem>> = _availableSkills
 
-    private var currentSearchQuery = ""
+    var currentSearchQuery = ""
     private var rawCoursesList: List<Course> = emptyList()
 
     init {
