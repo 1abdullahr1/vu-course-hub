@@ -43,4 +43,6 @@
     <color name="chip_text">#0058CB</color>
     <color name="accent_gold">#F9A825</color>
     <color name="card_stroke">#15000000</color>
+    <color name="shortcut_color">#0058CB</color>
+    <color name="ic_launcher_background">#0058CB</color>
 </resources>
