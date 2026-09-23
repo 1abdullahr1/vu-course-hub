@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.vu.lecturehub.R
 import com.vu.lecturehub.data.model.Course
 import com.vu.lecturehub.data.model.Department
+import com.vu.lecturehub.data.model.SkillDefinitions
 import com.vu.lecturehub.databinding.FragmentCoursesBinding
 import com.vu.lecturehub.ui.MainViewModel
 import com.vu.lecturehub.ui.adapters.CourseAdapter
@@ -53,12 +54,12 @@ class CoursesFragment : Fragment() {
     }
 
     private fun setupAdapters() {
-        // 1. Subject adapter for 2-column grid in header
+        // 1. Subject adapter for 2-row horizontal grid in header
         subjectAdapter = SubjectAdapter(emptyList()) { selectedDept ->
             filterByDepartment(selectedDept)
         }
 
-        // 2. Header adapter containing Hero banner, Search box, and Popular Subjects
+        // 2. Header adapter containing Hero banner, Search box, Popular Subjects, and Filter Bar
         headerAdapter = DiscoverHeaderAdapter(
             subjectAdapter = subjectAdapter,
             onSearchQueryChanged = { query ->
@@ -80,6 +81,12 @@ class CoursesFragment : Fragment() {
             },
             onResetFilterClicked = {
                 resetDepartmentFilter()
+            },
+            onOpenFiltersClicked = {
+                openFilterBottomSheet()
+            },
+            onClearFiltersClicked = {
+                viewModel.clearAllFilters()
             }
         )
 
@@ -89,14 +96,13 @@ class CoursesFragment : Fragment() {
             onBookmarkClick = { course -> viewModel.toggleBookmark(course) }
         )
 
-        // 4. Combine header and courses using ConcatAdapter (isolateViewTypes = true by default prevents ClassCastException)
+        // 4. Combine header and courses using ConcatAdapter (isolateViewTypes = true by default)
         val concatAdapter = ConcatAdapter(headerAdapter, courseAdapter)
 
         binding.rvCourses.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = concatAdapter
             setHasFixedSize(true)
-            // Smoothly hide search dropdown when user scrolls
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     if (newState != RecyclerView.SCROLL_STATE_IDLE && binding.cardSearchDropdown.visibility == View.VISIBLE) {
@@ -108,9 +114,14 @@ class CoursesFragment : Fragment() {
         }
     }
 
+    private fun openFilterBottomSheet() {
+        hideKeyboard()
+        hideSearchDropdown()
+        CourseFilterBottomSheet.newInstance().show(childFragmentManager, CourseFilterBottomSheet.TAG)
+    }
+
     private fun filterByDepartment(dept: Department) {
         viewModel.selectDepartment(dept)
-        headerAdapter.updateCatalogHeader(dept.name, true)
         hideSearchDropdown()
 
         // Smooth scroll to catalog items (just below header)
@@ -123,8 +134,7 @@ class CoursesFragment : Fragment() {
     }
 
     private fun resetDepartmentFilter() {
-        viewModel.selectDepartment(Department("All", 0))
-        headerAdapter.updateCatalogHeader(getString(R.string.explore_courses_and_programs), false)
+        viewModel.clearAllFilters()
     }
 
     private fun setupSearchDropdown() {
@@ -194,7 +204,28 @@ class CoursesFragment : Fragment() {
             binding.emptyView.visibility = if (courses.isEmpty()) View.VISIBLE else View.GONE
         }
 
-        // Observe departments for the 2-column grid in header
+        // Observe filter state to update header status and catalog title
+        viewModel.filterState.observe(viewLifecycleOwner) { state ->
+            if (state.isAnyActive) {
+                val activeTitle = when {
+                    state.selectedSubjects.isNotEmpty() && state.selectedSkills.isEmpty() -> {
+                        if (state.selectedSubjects.size == 1) state.selectedSubjects.first()
+                        else "Subjects (${state.selectedSubjects.size})"
+                    }
+                    state.selectedSkills.isNotEmpty() && state.selectedSubjects.isEmpty() -> {
+                        if (state.selectedSkills.size == 1) {
+                            SkillDefinitions.SKILLS.find { it.id == state.selectedSkills.first() }?.name ?: "Skill"
+                        } else "Skills (${state.selectedSkills.size})"
+                    }
+                    else -> "Filtered Courses (${state.totalActiveCount})"
+                }
+                headerAdapter.updateCatalogHeader(activeTitle, true, state.totalActiveCount)
+            } else {
+                headerAdapter.updateCatalogHeader(getString(R.string.explore_courses_and_programs), false, 0)
+            }
+        }
+
+        // Observe departments for the 2-row horizontal grid in header
         viewModel.departments.observe(viewLifecycleOwner) { depts ->
             subjectAdapter.updateDepartments(depts)
         }

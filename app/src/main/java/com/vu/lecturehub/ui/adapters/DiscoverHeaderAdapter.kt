@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.vu.lecturehub.R
 import com.vu.lecturehub.databinding.ItemDiscoverHeaderBinding
 
 class DiscoverHeaderAdapter(
@@ -17,17 +18,21 @@ class DiscoverHeaderAdapter(
     private val onSearchSubmitted: (String) -> Unit,
     private val onSearchFocused: () -> Unit,
     private val onTrendingChipClicked: (String) -> Unit,
-    private val onResetFilterClicked: () -> Unit
+    private val onResetFilterClicked: () -> Unit,
+    private val onOpenFiltersClicked: () -> Unit,
+    private val onClearFiltersClicked: () -> Unit
 ) : RecyclerView.Adapter<DiscoverHeaderAdapter.HeaderViewHolder>() {
 
     private var currentCatalogTitle = "Explore all courses"
     private var isFilterActive = false
+    private var activeFilterCount = 0
     private var currentSearchQuery = ""
     private var activeViewHolder: HeaderViewHolder? = null
 
-    fun updateCatalogHeader(title: String, isFiltered: Boolean) {
+    fun updateCatalogHeader(title: String, isFiltered: Boolean, filterCount: Int = 0) {
         currentCatalogTitle = title
         isFilterActive = isFiltered
+        activeFilterCount = filterCount
         activeViewHolder?.updateHeaderState() ?: notifyItemChanged(0)
     }
 
@@ -74,14 +79,13 @@ class DiscoverHeaderAdapter(
     ) : RecyclerView.ViewHolder(b.root) {
 
         init {
-            // Setup Popular Subjects 2-Row Horizontal Scrolling Grid as shown in GIF
+            // Setup Popular Subjects 2-Row Horizontal Scrolling Grid
             b.rvPopularSubjects.apply {
                 layoutManager = GridLayoutManager(context, 2, GridLayoutManager.HORIZONTAL, false)
                 adapter = subjectAdapter
                 setHasFixedSize(true)
                 isNestedScrollingEnabled = false
 
-                // Prevent vertical parent from hijacking horizontal scrolling gestures
                 addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
                     override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
                         when (e.action) {
@@ -93,6 +97,15 @@ class DiscoverHeaderAdapter(
                     override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
                     override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
                 })
+            }
+
+            // Filter Trigger Bar Listeners
+            b.btnOpenFilters.setOnClickListener {
+                onOpenFiltersClicked()
+            }
+
+            b.btnClearAllFilters.setOnClickListener {
+                onClearFiltersClicked()
             }
 
             b.btnResetSubjectFilter.setOnClickListener {
@@ -158,6 +171,17 @@ class DiscoverHeaderAdapter(
         fun updateHeaderState() {
             b.tvCatalogSectionTitle.text = currentCatalogTitle
             b.btnResetSubjectFilter.visibility = if (isFilterActive) View.VISIBLE else View.GONE
+
+            // Filter Bar Status
+            if (activeFilterCount > 0) {
+                b.tvFilterStatus.text = "Filters ($activeFilterCount selected)"
+                b.btnOpenFilters.setBackgroundResource(R.drawable.bg_filter_pill_active)
+                b.btnClearAllFilters.visibility = View.VISIBLE
+            } else {
+                b.tvFilterStatus.text = "All filters"
+                b.btnOpenFilters.setBackgroundResource(R.drawable.bg_filter_pill)
+                b.btnClearAllFilters.visibility = View.GONE
+            }
         }
     }
 }
