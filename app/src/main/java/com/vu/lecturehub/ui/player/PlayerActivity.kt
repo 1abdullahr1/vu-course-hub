@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -98,23 +99,32 @@ class PlayerActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupPlayerWebView() {
         val webView = binding.playerWebView
+
+        // Crucial for YouTube: Enable third-party cookies for session tokens & embed verification
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(true)
+        cookieManager.setAcceptThirdPartyCookies(webView, true)
+
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            mediaPlaybackRequiresUserGesture = false // Enables instant autoplay without waiting for touch
+            mediaPlaybackRequiresUserGesture = false // Enables instant autoplay
             loadWithOverviewMode = true
             useWideViewPort = true
             allowFileAccess = false
             databaseEnabled = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             cacheMode = WebSettings.LOAD_DEFAULT
-            userAgentString = userAgentString.replace("; wv", "")
         }
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                if (request != null && !request.isForMainFrame) {
+                    return false
+                }
                 val url = request?.url?.toString() ?: return false
-                if (url.contains("youtube.com") || url.contains("googlevideo.com") || url.contains("ytimg.com") || url.contains("google.com")) {
+                val appOrigin = "https://$packageName"
+                if (url.startsWith(appOrigin) || url.contains("youtube.com") || url.contains("googlevideo.com") || url.contains("ytimg.com") || url.contains("youtube-nocookie.com")) {
                     return false
                 }
                 return try {
@@ -141,34 +151,39 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun loadVideoInPlayer(videoId: String) {
         currentLoadedVideoId = videoId
+        val appOrigin = "https://$packageName"
         val html = """
             <!DOCTYPE html>
             <html>
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                <meta name="referrer" content="strict-origin-when-cross-origin">
                 <style>
                     * { margin:0; padding:0; box-sizing:border-box; }
                     html, body { width:100%; height:100%; background:#000; overflow:hidden; }
-                    iframe { width:100%; height:100%; position:absolute; top:0; left:0; border:0; }
+                    #player { width:100%; height:100%; position:absolute; top:0; left:0; border:0; }
                 </style>
+                <script defer src="https://www.youtube.com/iframe_api"></script>
             </head>
             <body>
-                <iframe id="player"
-                    src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&controls=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowfullscreen>
-                </iframe>
+                <div id="player"></div>
                 <script>
-                    var tag = document.createElement('script');
-                    tag.src = "https://www.youtube.com/iframe_api";
-                    var firstScriptTag = document.getElementsByTagName('script')[0];
-                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
                     var player;
                     function onYouTubeIframeAPIReady() {
                         try {
                             player = new YT.Player('player', {
+                                height: '100%',
+                                width: '100%',
+                                videoId: '$videoId',
+                                playerVars: {
+                                    'autoplay': 1,
+                                    'playsinline': 1,
+                                    'controls': 1,
+                                    'rel': 0,
+                                    'enablejsapi': 1,
+                                    'fs': 1,
+                                    'origin': '$appOrigin'
+                                },
                                 events: {
                                     'onReady': function(e) {
                                         try { e.target.playVideo(); } catch(err) {}
@@ -185,12 +200,9 @@ class PlayerActivity : AppCompatActivity() {
 
                     function switchVideo(newId) {
                         if (player && typeof player.loadVideoById === 'function') {
-                            player.loadVideoById(newId);
+                            player.loadVideoById(newId, 0);
                         } else {
-                            var el = document.getElementById('player');
-                            if (el) {
-                                el.src = "https://www.youtube.com/embed/" + newId + "?autoplay=1&playsinline=1&controls=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com";
-                            }
+                            location.href = "https://www.youtube.com/embed/" + newId + "?autoplay=1&playsinline=1&controls=1&rel=0&enablejsapi=1&origin=$appOrigin";
                         }
                     }
                 </script>
@@ -199,7 +211,7 @@ class PlayerActivity : AppCompatActivity() {
         """.trimIndent()
 
         binding.playerWebView.loadDataWithBaseURL(
-            "https://www.youtube.com",
+            appOrigin,
             html,
             "text/html",
             "UTF-8",
