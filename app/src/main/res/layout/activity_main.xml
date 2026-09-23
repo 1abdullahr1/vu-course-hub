@@ -18,8 +18,9 @@
         android:layout_gravity="bottom"
         android:background="?attr/colorSurface"
         app:elevation="8dp"
-        app:itemIconTint="@color/primary"
-        app:itemTextColor="@color/primary"
+        app:itemActiveIndicatorColor="@color/nav_active_indicator"
+        app:itemIconTint="@color/nav_item_tint"
+        app:itemTextColor="@color/nav_item_tint"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 

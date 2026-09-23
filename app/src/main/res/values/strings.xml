@@ -11,7 +11,7 @@
     <string name="no_saved_courses">No saved courses yet</string>
     <string name="no_saved_courses_desc">Bookmark courses to access them quickly here.</string>
     <string name="lectures_count">%d lectures</string>
-    <string name="enroll_course">Bookmark Course</string>
+    <string name="enroll_course">Bookmark</string>
     <string name="enrolled_course">Bookmarked</string>
     <string name="course_lectures">Course Lectures</string>
     <string name="disclaimer_title">Disclaimer</string>

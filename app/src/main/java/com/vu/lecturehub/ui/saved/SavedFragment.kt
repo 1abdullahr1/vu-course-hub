@@ -17,6 +17,7 @@ import com.vu.lecturehub.ui.MainViewModel
 import com.vu.lecturehub.ui.adapters.CourseAdapter
 import com.vu.lecturehub.ui.detail.CourseDetailActivity
 import com.vu.lecturehub.ui.player.PlayerActivity
+import com.vu.lecturehub.ui.settings.SettingsBottomSheetDialogFragment
 
 class SavedFragment : Fragment() {
 
@@ -48,6 +49,11 @@ class SavedFragment : Fragment() {
             layoutManager = LinearLayoutManager(context)
             adapter = courseAdapter
             setHasFixedSize(true)
+        }
+
+        binding.btnSettings.setOnClickListener {
+            SettingsBottomSheetDialogFragment.newInstance()
+                .show(childFragmentManager, SettingsBottomSheetDialogFragment.TAG)
         }
 
         viewModel.bookmarkedCourses.observe(viewLifecycleOwner) { bookmarked ->

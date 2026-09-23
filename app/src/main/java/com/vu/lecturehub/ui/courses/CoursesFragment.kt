@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ConcatAdapter
@@ -53,6 +55,7 @@ class CoursesFragment : Fragment() {
 
         setupAdapters()
         setupSearchDropdown()
+        setupKeyboardListener()
         observeData()
     }
 
@@ -173,27 +176,39 @@ class CoursesFragment : Fragment() {
         }
     }
 
+    private fun setupKeyboardListener() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val isImeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            if (isImeVisible) {
+                if (viewModel.currentSearchQuery.isEmpty()) {
+                    showSearchDropdown()
+                }
+            } else {
+                hideSearchDropdownInstantly()
+            }
+            insets
+        }
+    }
+
     private fun showSearchDropdown() {
         if (binding.cardSearchDropdown.visibility != View.VISIBLE) {
             binding.cardSearchDropdown.alpha = 0f
             binding.cardSearchDropdown.visibility = View.VISIBLE
             binding.cardSearchDropdown.animate()
                 .alpha(1f)
-                .setDuration(200)
+                .setDuration(180)
                 .start()
         }
     }
 
+    private fun hideSearchDropdownInstantly() {
+        binding.cardSearchDropdown.animate().cancel()
+        binding.cardSearchDropdown.visibility = View.GONE
+        binding.cardSearchDropdown.alpha = 0f
+    }
+
     private fun hideSearchDropdown() {
-        if (binding.cardSearchDropdown.visibility == View.VISIBLE) {
-            binding.cardSearchDropdown.animate()
-                .alpha(0f)
-                .setDuration(150)
-                .withEndAction {
-                    binding.cardSearchDropdown.visibility = View.GONE
-                }
-                .start()
-        }
+        hideSearchDropdownInstantly()
     }
 
     private fun hideKeyboard() {

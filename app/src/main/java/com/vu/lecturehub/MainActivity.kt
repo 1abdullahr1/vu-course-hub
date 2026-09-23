@@ -9,6 +9,7 @@ import com.vu.lecturehub.ui.MainViewModel
 import com.vu.lecturehub.ui.courses.CoursesFragment
 import com.vu.lecturehub.ui.home.HomeFragment
 import com.vu.lecturehub.ui.saved.SavedFragment
+import com.vu.lecturehub.util.ThemeManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private var activeFragment: Fragment = homeFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applySavedTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

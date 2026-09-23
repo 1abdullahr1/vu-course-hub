@@ -6,16 +6,34 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingHorizontal="16dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="12dp"
-        android:text="@string/nav_saved"
-        android:textColor="?attr/colorPrimary"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:paddingTop="20dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/nav_saved"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/btn_settings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Settings"
+            android:padding="8dp"
+            android:src="@drawable/ic_settings"
+            app:tint="?attr/colorOnSurface" />
+    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
