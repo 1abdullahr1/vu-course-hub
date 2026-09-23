@@ -25,4 +25,9 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <style name="ThemeOverlay.VULectureHub.BottomNav" parent="">
+        <item name="colorSecondaryContainer">@color/nav_active_indicator</item>
+        <item name="colorOnSecondaryContainer">@color/primary</item>
+    </style>
 </resources>
