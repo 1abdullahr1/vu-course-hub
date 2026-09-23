@@ -107,11 +107,13 @@ class CourseDetailActivity : AppCompatActivity() {
     }
 
     private fun playLecture(course: Course, lecture: Lecture) {
-        val intent = Intent(this, PlayerActivity::class.java).apply {
-            putExtra("EXTRA_COURSE", course)
-            putExtra("EXTRA_LECTURE", lecture)
+        val intent = Intent(this, com.vu.lecturehub.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("EXTRA_PLAY_COURSE", course)
+            putExtra("EXTRA_PLAY_LECTURE", lecture)
         }
         startActivity(intent)
-        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        finish()
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 }

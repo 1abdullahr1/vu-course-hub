@@ -121,12 +121,17 @@ class HomeFragment : Fragment() {
                 videoId = if (currentLectureIndex == 1) course.firstVideoId else null,
                 thumbnailUrl = course.thumbnailUrl
             )
-            val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
-                putExtra("EXTRA_COURSE", course)
-                putExtra("EXTRA_LECTURE", lecture)
+            val mainAct = activity as? MainActivity
+            if (mainAct != null) {
+                mainAct.playCourse(course, lecture)
+            } else {
+                val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
+                    putExtra("EXTRA_COURSE", course)
+                    putExtra("EXTRA_LECTURE", lecture)
+                }
+                startActivity(intent)
+                activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
             }
-            startActivity(intent)
-            activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
 
         // Clicking the card itself opens the course syllabus/detail page

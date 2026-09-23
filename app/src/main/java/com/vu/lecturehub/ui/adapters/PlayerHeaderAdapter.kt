@@ -8,12 +8,18 @@ import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.databinding.ItemPlayerHeaderBinding
 
 class PlayerHeaderAdapter(
-    private val course: Course,
+    private var course: Course,
     private var currentLecture: Lecture,
     private val onOpenYoutubeClick: () -> Unit
 ) : RecyclerView.Adapter<PlayerHeaderAdapter.HeaderViewHolder>() {
 
     fun updateLecture(lecture: Lecture) {
+        this.currentLecture = lecture
+        notifyItemChanged(0)
+    }
+
+    fun updateCourse(course: Course, lecture: Lecture) {
+        this.course = course
         this.currentLecture = lecture
         notifyItemChanged(0)
     }

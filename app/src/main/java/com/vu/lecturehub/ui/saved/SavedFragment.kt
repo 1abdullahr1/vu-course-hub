@@ -81,12 +81,17 @@ class SavedFragment : Fragment() {
                 videoId = if (lectureIndex == 1) course.firstVideoId else null,
                 thumbnailUrl = course.thumbnailUrl
             )
-        val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
-            putExtra("EXTRA_COURSE", course)
-            putExtra("EXTRA_LECTURE", targetLecture)
+        val mainAct = activity as? com.vu.lecturehub.MainActivity
+        if (mainAct != null) {
+            mainAct.playCourse(course, targetLecture)
+        } else {
+            val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
+                putExtra("EXTRA_COURSE", course)
+                putExtra("EXTRA_LECTURE", targetLecture)
+            }
+            startActivity(intent)
+            activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
-        startActivity(intent)
-        activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     override fun onDestroyView() {
