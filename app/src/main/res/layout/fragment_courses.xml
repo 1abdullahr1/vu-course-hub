@@ -1,119 +1,466 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:background="?android:attr/colorBackground">
 
-    <!-- Search Bar Card -->
-    <com.google.android.material.card.MaterialCardView
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_discover"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp"
-        app:strokeColor="@color/card_stroke"
-        app:strokeWidth="1dp">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="14dp">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="32dp">
 
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_search"
-                app:tint="?attr/colorPrimary" />
+            <!-- Hero Header Banner (edX style) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/brand_hero"
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="24dp"
+                android:paddingBottom="24dp">
 
-            <EditText
-                android:id="@+id/et_search"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:hint="@string/search_hint"
-                android:imeOptions="actionSearch"
-                android:inputType="text"
-                android:maxLines="1"
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?attr/colorOutline"
-                android:textSize="14sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/explore_the_catalog"
+                    android:textColor="#B0FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
-            <ImageView
-                android:id="@+id/btn_clear_search"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_close"
-                android:visibility="gone"
-                app:tint="?attr/colorOutline" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingMultiplier="0.95"
+                    android:text="@string/advance_your_career"
+                    android:textColor="@android:color/white"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
 
-    <!-- Horizontal Department Filter Chips -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_filter_departments"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clipToPadding="false"
-        android:orientation="horizontal"
-        android:paddingHorizontal="12dp"
-        android:paddingBottom="4dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/item_department_chip" />
+                <!-- Embedded Search Box with Search Button -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/rounded_ripple"
+                    android:backgroundTint="@android:color/white"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-    <!-- Courses List with SwipeRefresh -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+                    <EditText
+                        android:id="@+id/et_search"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:hint="@string/search_hint"
+                        android:imeOptions="actionSearch"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:paddingHorizontal="14dp"
+                        android:textColor="#1A1B1F"
+                        android:textColorHint="#74777F"
+                        android:textSize="14sp" />
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_refresh"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+                    <ImageView
+                        android:id="@+id/btn_clear_search"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_close"
+                        android:visibility="gone"
+                        app:tint="#74777F" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_search_action"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:backgroundTint="@color/brand_accent_orange"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/search_action"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="6dp" />
+                </LinearLayout>
+
+                <!-- Trending Tags Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/trending_label"
+                        android:textColor="#E0FFFFFF"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <HorizontalScrollView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/container_trending_chips"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <!-- Trending Chip 1 -->
+                            <TextView
+                                android:id="@+id/chip_trend_cs201"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/rounded_ripple"
+                                android:backgroundTint="@color/hero_chip_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="CS201"
+                                android:textColor="@color/hero_chip_text"
+                                android:textSize="12sp" />
+
+                            <!-- Trending Chip 2 -->
+                            <TextView
+                                android:id="@+id/chip_trend_python"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/rounded_ripple"
+                                android:backgroundTint="@color/hero_chip_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Python"
+                                android:textColor="@color/hero_chip_text"
+                                android:textSize="12sp" />
+
+                            <!-- Trending Chip 3 -->
+                            <TextView
+                                android:id="@+id/chip_trend_data"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/rounded_ripple"
+                                android:backgroundTint="@color/hero_chip_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Data Science"
+                                android:textColor="@color/hero_chip_text"
+                                android:textSize="12sp" />
+
+                            <!-- Trending Chip 4 -->
+                            <TextView
+                                android:id="@+id/chip_trend_calculus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/rounded_ripple"
+                                android:backgroundTint="@color/hero_chip_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Calculus"
+                                android:textColor="@color/hero_chip_text"
+                                android:textSize="12sp" />
+
+                            <!-- Trending Chip 5 -->
+                            <TextView
+                                android:id="@+id/chip_trend_accounting"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/rounded_ripple"
+                                android:backgroundTint="@color/hero_chip_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Accounting"
+                                android:textColor="@color/hero_chip_text"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </HorizontalScrollView>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Popular Subjects Section (2-Column Grid as in edX) -->
+            <LinearLayout
+                android:id="@+id/section_popular_subjects"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:text="@string/filter_by_popular_subjects"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_popular_subjects"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingHorizontal="10dp"
+                    tools:itemCount="4"
+                    tools:listitem="@layout/item_subject_card" />
+            </LinearLayout>
+
+            <!-- Explore Courses Section Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <TextView
+                    android:id="@+id/tv_catalog_section_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/explore_courses_and_programs"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btn_reset_subject_filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="6dp"
+                    android:text="Show All"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </LinearLayout>
+
+            <!-- Course Catalog RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_courses"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:clipToPadding="false"
-                android:paddingBottom="16dp"
+                android:nestedScrollingEnabled="false"
+                tools:itemCount="3"
                 tools:listitem="@layout/item_course_card" />
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <!-- Empty State View -->
+            <!-- Empty Search State View -->
+            <LinearLayout
+                android:id="@+id/empty_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:alpha="0.4"
+                    android:src="@drawable/ic_search"
+                    app:tint="?attr/colorOutline" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/no_courses_found"
+                    android:textColor="?attr/colorOutline"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Interactive Search Dropdown / Overlay Card (as in screenshot 4) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_search_dropdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="150dp"
+        android:visibility="gone"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="10dp"
+        app:strokeColor="@color/card_stroke"
+        app:strokeWidth="1dp"
+        tools:visibility="gone">
+
         <LinearLayout
-            android:id="@+id/empty_view"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
             android:orientation="vertical"
-            android:padding="24dp"
-            android:visibility="gone">
+            android:paddingVertical="12dp">
 
-            <ImageView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@drawable/playlist_placeholder"
-                app:tint="?attr/colorOutline" />
-
+            <!-- Section 1: Most popular programs / courses -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/no_courses_found"
-                android:textColor="?attr/colorOutline"
-                android:textSize="14sp" />
-        </LinearLayout>
-    </FrameLayout>
+                android:paddingHorizontal="16dp"
+                android:paddingBottom="6dp"
+                android:text="@string/most_popular_programs"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
-</LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_search_popular"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_search_suggestion" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="@color/card_stroke" />
+
+            <!-- Section 2: Trending now with upward trend icons -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingBottom="6dp"
+                android:text="@string/trending_now"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <!-- Trend Item 1 -->
+            <LinearLayout
+                android:id="@+id/item_trend_cs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_trending_up"
+                    app:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="Computer Science &amp; Programming"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Trend Item 2 -->
+            <LinearLayout
+                android:id="@+id/item_trend_data"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_trending_up"
+                    app:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="Data Science &amp; AI"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Trend Item 3 -->
+            <LinearLayout
+                android:id="@+id/item_trend_math"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_trending_up"
+                    app:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="Mathematics &amp; Calculus"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Trend Item 4 -->
+            <LinearLayout
+                android:id="@+id/item_trend_business"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_trending_up"
+                    app:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="Business &amp; Finance"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>

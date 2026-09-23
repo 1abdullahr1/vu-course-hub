@@ -45,4 +45,11 @@
     <color name="card_stroke">#15000000</color>
     <color name="shortcut_color">#0058CB</color>
     <color name="ic_launcher_background">#0058CB</color>
+
+    <!-- edX-inspired Brand Theme Colors -->
+    <color name="brand_hero">#00262B</color>
+    <color name="brand_accent_orange">#D03B00</color>
+    <color name="brand_accent_orange_dark">#B03200</color>
+    <color name="hero_chip_bg">#25FFFFFF</color>
+    <color name="hero_chip_text">#FFFFFF</color>
 </resources>
