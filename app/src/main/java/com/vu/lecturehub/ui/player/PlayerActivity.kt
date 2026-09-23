@@ -2,10 +2,15 @@ package com.vu.lecturehub.ui.player
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
@@ -101,9 +106,27 @@ class PlayerActivity : AppCompatActivity() {
             useWideViewPort = true
             allowFileAccess = false
             databaseEnabled = true
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            cacheMode = WebSettings.LOAD_DEFAULT
+            userAgentString = userAgentString.replace("; wv", "")
         }
 
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString() ?: return false
+                if (url.contains("youtube.com") || url.contains("googlevideo.com") || url.contains("ytimg.com") || url.contains("google.com")) {
+                    return false
+                }
+                return try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        }
+
         webView.webChromeClient = WebChromeClient()
 
         webView.addJavascriptInterface(object {
@@ -126,11 +149,16 @@ class PlayerActivity : AppCompatActivity() {
                 <style>
                     * { margin:0; padding:0; box-sizing:border-box; }
                     html, body { width:100%; height:100%; background:#000; overflow:hidden; }
-                    #player { width:100%; height:100%; position:absolute; top:0; left:0; border:0; }
+                    iframe { width:100%; height:100%; position:absolute; top:0; left:0; border:0; }
                 </style>
             </head>
             <body>
-                <div id="player"></div>
+                <iframe id="player"
+                    src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&controls=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
                 <script>
                     var tag = document.createElement('script');
                     tag.src = "https://www.youtube.com/iframe_api";
@@ -139,35 +167,30 @@ class PlayerActivity : AppCompatActivity() {
 
                     var player;
                     function onYouTubeIframeAPIReady() {
-                        player = new YT.Player('player', {
-                            height: '100%',
-                            width: '100%',
-                            videoId: '$videoId',
-                            playerVars: {
-                                'autoplay': 1,
-                                'playsinline': 1,
-                                'controls': 1,
-                                'rel': 0,
-                                'modestbranding': 1,
-                                'fs': 1,
-                                'origin': 'https://www.youtube.com'
-                            },
-                            events: {
-                                'onReady': function(e) { e.target.playVideo(); },
-                                'onStateChange': function(e) {
-                                    if (e.data === 0 && window.AndroidBridge) {
-                                        window.AndroidBridge.onVideoEnded();
+                        try {
+                            player = new YT.Player('player', {
+                                events: {
+                                    'onReady': function(e) {
+                                        try { e.target.playVideo(); } catch(err) {}
+                                    },
+                                    'onStateChange': function(e) {
+                                        if (e.data === 0 && window.AndroidBridge) {
+                                            window.AndroidBridge.onVideoEnded();
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                        } catch(e) {}
                     }
 
                     function switchVideo(newId) {
-                        if (player && player.loadVideoById) {
+                        if (player && typeof player.loadVideoById === 'function') {
                             player.loadVideoById(newId);
                         } else {
-                            location.href = "https://www.youtube.com/embed/" + newId + "?autoplay=1&playsinline=1&controls=1&rel=0";
+                            var el = document.getElementById('player');
+                            if (el) {
+                                el.src = "https://www.youtube.com/embed/" + newId + "?autoplay=1&playsinline=1&controls=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com";
+                            }
                         }
                     }
                 </script>
@@ -232,10 +255,30 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            binding.playerContainer.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+        } else {
+            binding.playerContainer.layoutParams.height = (220 * resources.displayMetrics.density).toInt()
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        }
+    }
+
     override fun onPause() {
         super.onPause()
-        // Pause playback when app is minimized or user navigates away (Google Play compliance)
-        binding.playerWebView.evaluateJavascript("if (player && player.pauseVideo) { player.pauseVideo(); }", null)
+        binding.playerWebView.onPause()
+        binding.playerWebView.evaluateJavascript("if (player && typeof player.pauseVideo === 'function') { player.pauseVideo(); }", null)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.playerWebView.onResume()
     }
 
     override fun onDestroy() {

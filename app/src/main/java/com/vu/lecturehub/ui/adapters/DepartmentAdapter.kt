@@ -56,10 +56,14 @@ class DepartmentAdapter(
 
             binding.root.setOnClickListener {
                 val previousIndex = selectedIndex
-                selectedIndex = bindingAdapterPosition
-                notifyItemChanged(previousIndex)
-                notifyItemChanged(selectedIndex)
-                onDepartmentSelected(department)
+                @Suppress("DEPRECATION")
+                val currentPos = adapterPosition
+                if (currentPos != RecyclerView.NO_POSITION) {
+                    selectedIndex = currentPos
+                    notifyItemChanged(previousIndex)
+                    notifyItemChanged(selectedIndex)
+                    onDepartmentSelected(department)
+                }
             }
         }
     }
