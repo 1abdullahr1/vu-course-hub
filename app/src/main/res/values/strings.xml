@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">VU Course Hub</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_courses">Courses</string>
+    <string name="nav_saved">My Courses</string>
+    <string name="search_hint">Search course code (e.g. CS101, MTH501)...</string>
+    <string name="continue_watching">Continue Watching</string>
+    <string name="popular_departments">Faculties &amp; Departments</string>
+    <string name="all_courses">All Courses</string>
+    <string name="no_courses_found">No courses found matching your query</string>
+    <string name="no_saved_courses">No saved courses yet</string>
+    <string name="no_saved_courses_desc">Bookmark courses to access them quickly here.</string>
+    <string name="lectures_count">%d lectures</string>
+    <string name="enroll_course">Bookmark Course</string>
+    <string name="enrolled_course">Bookmarked</string>
+    <string name="course_lectures">Course Lectures</string>
+    <string name="disclaimer_title">Disclaimer</string>
+    <string name="disclaimer_content">This is an unofficial student educational app. All video lectures are streamed via the YouTube Embedded Player API from the official Virtual University of Pakistan channel.</string>
+</resources>
