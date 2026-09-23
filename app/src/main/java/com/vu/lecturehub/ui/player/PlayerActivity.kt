@@ -1,15 +1,16 @@
 package com.vu.lecturehub.ui.player
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.vu.lecturehub.data.model.Course
 import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.data.repository.CourseRepository
@@ -25,8 +26,7 @@ class PlayerActivity : AppCompatActivity() {
     private var currentLecture: Lecture? = null
     private var currentLectures: List<Lecture> = emptyList()
     private lateinit var queueAdapter: LectureAdapter
-    private var youTubePlayerInstance: YouTubePlayer? = null
-    private var isPlayerReady = false
+    private var currentLoadedVideoId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,10 +56,16 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         updateLectureUI(currentCourse!!, currentLecture!!)
-        setupYouTubePlayer()
+        setupPlayerWebView()
         setupPlaylistQueue(currentCourse!!)
         setupExternalButton()
         loadRealLectures(currentCourse!!)
+
+        // Start playing initial video immediately
+        val initialVideoId = currentLecture?.videoId
+            ?: currentCourse?.firstVideoId
+            ?: "4L6IRKz54EQ"
+        loadVideoInPlayer(initialVideoId)
     }
 
     private fun updateLectureUI(course: Course, lecture: Lecture) {
@@ -84,32 +90,98 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupYouTubePlayer() {
-        lifecycle.addObserver(binding.youtubePlayerView)
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupPlayerWebView() {
+        val webView = binding.playerWebView
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            mediaPlaybackRequiresUserGesture = false // Enables instant autoplay without waiting for touch
+            loadWithOverviewMode = true
+            useWideViewPort = true
+            allowFileAccess = false
+            databaseEnabled = true
+        }
 
-        val iFramePlayerOptions = IFramePlayerOptions.Builder()
-            .controls(1)
-            .rel(0)
-            .build()
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = WebChromeClient()
 
-        binding.youtubePlayerView.initialize(object : AbstractYouTubePlayerListener() {
-            override fun onReady(youTubePlayer: YouTubePlayer) {
-                youTubePlayerInstance = youTubePlayer
-                isPlayerReady = true
-                val targetVideoId = currentLecture?.videoId
-                    ?: currentCourse?.firstVideoId
-
-                if (!targetVideoId.isNullOrEmpty()) {
-                    youTubePlayer.loadVideo(targetVideoId, 0f)
-                }
-            }
-
-            override fun onStateChange(youTubePlayer: YouTubePlayer, state: PlayerConstants.PlayerState) {
-                if (state == PlayerConstants.PlayerState.ENDED) {
+        webView.addJavascriptInterface(object {
+            @JavascriptInterface
+            fun onVideoEnded() {
+                runOnUiThread {
                     playNextLecture()
                 }
             }
-        }, iFramePlayerOptions)
+        }, "AndroidBridge")
+    }
+
+    private fun loadVideoInPlayer(videoId: String) {
+        currentLoadedVideoId = videoId
+        val html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                <style>
+                    * { margin:0; padding:0; box-sizing:border-box; }
+                    html, body { width:100%; height:100%; background:#000; overflow:hidden; }
+                    #player { width:100%; height:100%; position:absolute; top:0; left:0; border:0; }
+                </style>
+            </head>
+            <body>
+                <div id="player"></div>
+                <script>
+                    var tag = document.createElement('script');
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    var firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+                    var player;
+                    function onYouTubeIframeAPIReady() {
+                        player = new YT.Player('player', {
+                            height: '100%',
+                            width: '100%',
+                            videoId: '$videoId',
+                            playerVars: {
+                                'autoplay': 1,
+                                'playsinline': 1,
+                                'controls': 1,
+                                'rel': 0,
+                                'modestbranding': 1,
+                                'fs': 1,
+                                'origin': 'https://www.youtube.com'
+                            },
+                            events: {
+                                'onReady': function(e) { e.target.playVideo(); },
+                                'onStateChange': function(e) {
+                                    if (e.data === 0 && window.AndroidBridge) {
+                                        window.AndroidBridge.onVideoEnded();
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    function switchVideo(newId) {
+                        if (player && player.loadVideoById) {
+                            player.loadVideoById(newId);
+                        } else {
+                            location.href = "https://www.youtube.com/embed/" + newId + "?autoplay=1&playsinline=1&controls=1&rel=0";
+                        }
+                    }
+                </script>
+            </body>
+            </html>
+        """.trimIndent()
+
+        binding.playerWebView.loadDataWithBaseURL(
+            "https://www.youtube.com",
+            html,
+            "text/html",
+            "UTF-8",
+            null
+        )
     }
 
     private fun setupPlaylistQueue(course: Course) {
@@ -134,9 +206,8 @@ class PlayerActivity : AppCompatActivity() {
                     val matching = real.find { it.lectureIndex == currentLecture?.lectureIndex } ?: real.firstOrNull()
                     if (matching?.videoId != null) {
                         currentLecture = matching
-                        if (isPlayerReady) {
-                            youTubePlayerInstance?.loadVideo(matching.videoId, 0f)
-                        }
+                        updateLectureUI(course, matching)
+                        switchLecture(matching)
                     }
                 }
             }
@@ -147,8 +218,9 @@ class PlayerActivity : AppCompatActivity() {
         currentLecture = lecture
         updateLectureUI(currentCourse!!, lecture)
         val vid = lecture.videoId ?: currentCourse?.firstVideoId
-        if (!vid.isNullOrEmpty() && isPlayerReady) {
-            youTubePlayerInstance?.loadVideo(vid, 0f)
+        if (!vid.isNullOrEmpty() && vid != currentLoadedVideoId) {
+            currentLoadedVideoId = vid
+            binding.playerWebView.evaluateJavascript("switchVideo('$vid');", null)
         }
     }
 
@@ -160,8 +232,14 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        // Pause playback when app is minimized or user navigates away (Google Play compliance)
+        binding.playerWebView.evaluateJavascript("if (player && player.pauseVideo) { player.pauseVideo(); }", null)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        binding.youtubePlayerView.release()
+        binding.playerWebView.destroy()
     }
 }

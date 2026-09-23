@@ -7,18 +7,17 @@
     android:background="?android:attr/colorBackground"
     android:orientation="vertical">
 
-    <!-- YouTube Player View (100% Google Play Compliant) -->
+    <!-- High-Performance Direct YouTube Player Container -->
     <FrameLayout
         android:id="@+id/player_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="220dp"
         android:background="#000000">
 
-        <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-            android:id="@+id/youtube_player_view"
+        <WebView
+            android:id="@+id/player_web_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:enableAutomaticInitialization="false" />
+            android:layout_height="match_parent" />
     </FrameLayout>
 
     <!-- Lecture Info Card -->

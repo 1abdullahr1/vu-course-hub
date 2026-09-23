@@ -71,8 +71,4 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
-
-    // YouTube Player (Google Play Store compliant IFrame Player)
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:custom-ui:13.0.0")
 }
