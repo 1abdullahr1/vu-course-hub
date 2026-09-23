@@ -18,6 +18,22 @@
             android:id="@+id/player_web_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <!-- Instant Video Thumbnail to eliminate startup black screen -->
+        <ImageView
+            android:id="@+id/iv_player_thumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="Video Thumbnail" />
+
+        <!-- Loading indicator on top of thumbnail -->
+        <ProgressBar
+            android:id="@+id/pb_player_loader"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="#FFFFFF" />
     </FrameLayout>
 
     <!-- Up Next & Lecture List (60fps Recycled RecyclerView with ConcatAdapter) -->

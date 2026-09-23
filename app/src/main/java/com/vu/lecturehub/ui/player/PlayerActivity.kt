@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
+import coil.load
 import com.vu.lecturehub.R
 import com.vu.lecturehub.data.model.Course
 import com.vu.lecturehub.data.model.Lecture
@@ -37,6 +38,10 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var playerHeaderAdapter: PlayerHeaderAdapter
     private lateinit var queueAdapter: LectureAdapter
     private var currentLoadedVideoId: String? = null
+
+    private val autoDismissOverlayRunnable = Runnable {
+        hidePlayerOverlay()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,15 +71,62 @@ class PlayerActivity : AppCompatActivity() {
             )
         }
 
+        // Show instant thumbnail and loader to prevent initial black screen
+        val initialThumb = if (!currentLecture?.videoId.isNullOrEmpty()) {
+            "https://i.ytimg.com/vi/${currentLecture!!.videoId}/hqdefault.jpg"
+        } else {
+            currentLecture?.thumbnailUrl ?: currentCourse?.thumbnailUrl
+        }
+        showPlayerOverlay(initialThumb)
+
         setupRecyclerView(currentCourse!!, currentLecture!!)
         setupPlayerWebView()
         loadRealLectures(currentCourse!!)
 
-        // Start playing initial video immediately
-        val initialVideoId = currentLecture?.videoId
-            ?: currentCourse?.firstVideoId
-            ?: "4L6IRKz54EQ"
-        loadVideoInPlayer(initialVideoId)
+        // Determine initial playback target
+        val initialVideoId = if (!currentLecture?.videoId.isNullOrEmpty()) {
+            currentLecture!!.videoId
+        } else if (currentLecture?.lectureIndex == 1 && !currentCourse?.firstVideoId.isNullOrEmpty()) {
+            currentCourse!!.firstVideoId
+        } else {
+            null
+        }
+
+        val playlistId = currentCourse?.playlistId ?: ""
+        val initialIndex = (currentLecture?.lectureIndex ?: 1) - 1
+        loadPlayer(initialVideoId, playlistId, initialIndex)
+    }
+
+    private fun showPlayerOverlay(thumbnailUrl: String?) {
+        binding.ivPlayerThumbnail.animate().cancel()
+        binding.ivPlayerThumbnail.alpha = 1f
+        binding.ivPlayerThumbnail.visibility = View.VISIBLE
+        binding.pbPlayerLoader.visibility = View.VISIBLE
+
+        if (!thumbnailUrl.isNullOrEmpty()) {
+            binding.ivPlayerThumbnail.load(thumbnailUrl) {
+                crossfade(true)
+            }
+        }
+
+        // Safety auto-dismiss after 6 seconds in case YouTube API events fail or stall
+        binding.ivPlayerThumbnail.removeCallbacks(autoDismissOverlayRunnable)
+        binding.ivPlayerThumbnail.postDelayed(autoDismissOverlayRunnable, 6000)
+    }
+
+    private fun hidePlayerOverlay() {
+        binding.ivPlayerThumbnail.removeCallbacks(autoDismissOverlayRunnable)
+        binding.pbPlayerLoader.visibility = View.GONE
+        if (binding.ivPlayerThumbnail.visibility == View.VISIBLE) {
+            binding.ivPlayerThumbnail.animate()
+                .alpha(0f)
+                .setDuration(300)
+                .withEndAction {
+                    binding.ivPlayerThumbnail.visibility = View.GONE
+                    binding.ivPlayerThumbnail.alpha = 1f
+                }
+                .start()
+        }
     }
 
     private fun setupRecyclerView(course: Course, lecture: Lecture) {
@@ -104,6 +156,9 @@ class PlayerActivity : AppCompatActivity() {
         val vid = currentLecture?.videoId ?: currentCourse?.firstVideoId
         if (!vid.isNullOrEmpty()) {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=$vid"))
+            startActivity(intent)
+        } else if (!currentCourse?.playlistId.isNullOrEmpty()) {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/playlist?list=${currentCourse!!.playlistId}"))
             startActivity(intent)
         }
     }
@@ -152,6 +207,13 @@ class PlayerActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(object {
             @JavascriptInterface
+            fun onPlaybackStarted() {
+                runOnUiThread {
+                    hidePlayerOverlay()
+                }
+            }
+
+            @JavascriptInterface
             fun onVideoEnded() {
                 runOnUiThread {
                     playNextLecture()
@@ -160,9 +222,59 @@ class PlayerActivity : AppCompatActivity() {
         }, "AndroidBridge")
     }
 
-    private fun loadVideoInPlayer(videoId: String) {
+    private fun loadPlayer(videoId: String?, playlistId: String, index: Int) {
         currentLoadedVideoId = videoId
         val appOrigin = "https://$packageName"
+        val playerInitScript = if (!videoId.isNullOrEmpty()) {
+            """
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: '$videoId',
+                playerVars: {
+                    'autoplay': 1,
+                    'playsinline': 1,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'controls': 1,
+                    'fs': 1,
+                    'enablejsapi': 1,
+                    'origin': '$appOrigin'
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+            """.trimIndent()
+        } else {
+            """
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                playerVars: {
+                    'listType': 'playlist',
+                    'list': '$playlistId',
+                    'index': $index,
+                    'autoplay': 1,
+                    'playsinline': 1,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'controls': 1,
+                    'fs': 1,
+                    'enablejsapi': 1,
+                    'origin': '$appOrigin'
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+            """.trimIndent()
+        }
+
         val html = """
             <!DOCTYPE html>
             <html>
@@ -182,36 +294,24 @@ class PlayerActivity : AppCompatActivity() {
                     var player;
                     function onYouTubeIframeAPIReady() {
                         try {
-                            player = new YT.Player('player', {
-                                height: '100%',
-                                width: '100%',
-                                videoId: '$videoId',
-                                playerVars: {
-                                    'autoplay': 1,
-                                    'playsinline': 1,
-                                    'rel': 0,
-                                    'modestbranding': 1,
-                                    'controls': 1,
-                                    'fs': 1,
-                                    'enablejsapi': 1,
-                                    'origin': '$appOrigin'
-                                },
-                                events: {
-                                    'onReady': onPlayerReady,
-                                    'onStateChange': onPlayerStateChange,
-                                    'onError': onPlayerError
-                                }
-                            });
+                            $playerInitScript
                         } catch(e) {
-                            fallbackToEmbed('$videoId');
+                            fallbackDirect();
                         }
                     }
 
                     function onPlayerReady(event) {
-                        event.target.playVideo();
+                        try {
+                            event.target.playVideo();
+                        } catch(e) {}
                     }
 
                     function onPlayerStateChange(event) {
+                        if (event.data === 1 || event.data === 3) { // PLAYING or BUFFERING
+                            if (window.AndroidBridge) {
+                                window.AndroidBridge.onPlaybackStarted();
+                            }
+                        }
                         if (event.data === 0) { // ENDED
                             if (window.AndroidBridge) {
                                 window.AndroidBridge.onVideoEnded();
@@ -220,18 +320,48 @@ class PlayerActivity : AppCompatActivity() {
                     }
 
                     function onPlayerError(event) {
-                        fallbackToEmbed('$videoId');
+                        fallbackDirect();
                     }
 
-                    function fallbackToEmbed(vid) {
-                        document.body.innerHTML = '<iframe id="player" src="https://www.youtube-nocookie.com/embed/' + vid + '?autoplay=1&playsinline=1&rel=0&controls=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+                    function fallbackDirect() {
+                        var v = '${videoId ?: ""}';
+                        var pl = '$playlistId';
+                        var idx = $index;
+                        if (v !== '') {
+                            document.body.innerHTML = '<iframe id="player" src="https://www.youtube-nocookie.com/embed/' + v + '?autoplay=1&playsinline=1&rel=0&controls=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+                        } else if (pl !== '') {
+                            document.body.innerHTML = '<iframe id="player" src="https://www.youtube-nocookie.com/embed?listType=playlist&list=' + pl + '&index=' + idx + '&autoplay=1&playsinline=1&rel=0&controls=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+                        }
+                        setTimeout(function() {
+                            if (window.AndroidBridge) window.AndroidBridge.onPlaybackStarted();
+                        }, 1000);
                     }
 
-                    function switchVideo(vid) {
-                        if (player && typeof player.loadVideoById === 'function') {
-                            player.loadVideoById(vid);
-                        } else {
-                            fallbackToEmbed(vid);
+                    function playLecture(vid, plId, idx) {
+                        try {
+                            if (vid && vid !== '') {
+                                if (player && typeof player.loadVideoById === 'function') {
+                                    player.loadVideoById(vid);
+                                } else {
+                                    document.body.innerHTML = '<iframe id="player" src="https://www.youtube-nocookie.com/embed/' + vid + '?autoplay=1&playsinline=1&rel=0&controls=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+                                    setTimeout(function() { if (window.AndroidBridge) window.AndroidBridge.onPlaybackStarted(); }, 1000);
+                                }
+                            } else if (plId && plId !== '') {
+                                if (player && typeof player.loadPlaylist === 'function') {
+                                    player.loadPlaylist({
+                                        list: plId,
+                                        listType: 'playlist',
+                                        index: Math.max(0, idx)
+                                    });
+                                } else {
+                                    document.body.innerHTML = '<iframe id="player" src="https://www.youtube-nocookie.com/embed?listType=playlist&list=' + plId + '&index=' + idx + '&autoplay=1&playsinline=1&rel=0&controls=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+                                    setTimeout(function() { if (window.AndroidBridge) window.AndroidBridge.onPlaybackStarted(); }, 1000);
+                                }
+                            }
+                        } catch(e) {
+                            if (vid && vid !== '') {
+                                document.body.innerHTML = '<iframe id="player" src="https://www.youtube-nocookie.com/embed/' + vid + '?autoplay=1&playsinline=1&rel=0&controls=1" frameborder="0" allowfullscreen></iframe>';
+                            }
                         }
                     }
                 </script>
@@ -254,13 +384,10 @@ class PlayerActivity : AppCompatActivity() {
             if (real.isNotEmpty()) {
                 currentLectures = real
                 queueAdapter.updateLectures(real)
-                if (currentLecture?.videoId.isNullOrEmpty()) {
-                    val matching = real.find { it.lectureIndex == currentLecture?.lectureIndex } ?: real.firstOrNull()
-                    if (matching?.videoId != null) {
-                        currentLecture = matching
-                        playerHeaderAdapter.updateLecture(matching)
-                        switchLecture(matching)
-                    }
+                val matching = real.find { it.lectureIndex == currentLecture?.lectureIndex }
+                if (matching != null && currentLecture?.videoId.isNullOrEmpty()) {
+                    currentLecture = matching
+                    playerHeaderAdapter.updateLecture(matching)
                 }
             }
         }
@@ -272,11 +399,20 @@ class PlayerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repository.updateWatchProgress(currentCourse!!.playlistId, lecture.lectureIndex)
         }
-        val vid = lecture.videoId ?: currentCourse?.firstVideoId
-        if (!vid.isNullOrEmpty() && vid != currentLoadedVideoId) {
-            currentLoadedVideoId = vid
-            binding.playerWebView.evaluateJavascript("switchVideo('$vid');", null)
+
+        val thumb = if (!lecture.videoId.isNullOrEmpty()) {
+            "https://i.ytimg.com/vi/${lecture.videoId}/hqdefault.jpg"
+        } else {
+            lecture.thumbnailUrl ?: currentCourse?.thumbnailUrl
         }
+        showPlayerOverlay(thumb)
+
+        val vid = lecture.videoId ?: ""
+        val plId = currentCourse?.playlistId ?: ""
+        val idx = lecture.lectureIndex - 1
+        currentLoadedVideoId = if (vid.isNotEmpty()) vid else null
+
+        binding.playerWebView.evaluateJavascript("playLecture('$vid', '$plId', $idx);", null)
     }
 
     private fun playNextLecture() {
@@ -325,6 +461,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        binding.ivPlayerThumbnail.removeCallbacks(autoDismissOverlayRunnable)
         binding.playerWebView.destroy()
     }
 }

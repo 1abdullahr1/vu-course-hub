@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">VU Course Hub</string>
+    <string name="app_name">VU OCW</string>
     <string name="nav_home">Learn</string>
     <string name="nav_courses">Discover</string>
     <string name="nav_saved">Saved</string>

@@ -175,6 +175,7 @@ class CourseRepository(private val context: Context) {
                 }
 
                 if (lectures.isNotEmpty()) {
+                    playlistCache[course.playlistId] = lectures
                     return@withContext lectures
                 }
             }
