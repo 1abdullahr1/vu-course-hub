@@ -89,15 +89,13 @@ class CoursesFragment : Fragment() {
             onBookmarkClick = { course -> viewModel.toggleBookmark(course) }
         )
 
-        // 4. Combine header and courses using high-performance ConcatAdapter
-        val concatConfig = ConcatAdapter.Config.Builder()
-            .setIsolateViewTypes(false)
-            .build()
-        val concatAdapter = ConcatAdapter(concatConfig, headerAdapter, courseAdapter)
+        // 4. Combine header and courses using ConcatAdapter (isolateViewTypes = true by default prevents ClassCastException)
+        val concatAdapter = ConcatAdapter(headerAdapter, courseAdapter)
 
         binding.rvCourses.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = concatAdapter
+            setHasFixedSize(true)
             // Smoothly hide search dropdown when user scrolls
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -117,7 +115,10 @@ class CoursesFragment : Fragment() {
 
         // Smooth scroll to catalog items (just below header)
         binding.rvCourses.post {
-            (binding.rvCourses.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(1, 0)
+            val total = binding.rvCourses.adapter?.itemCount ?: 0
+            if (total > 1) {
+                (binding.rvCourses.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(1, 0)
+            }
         }
     }
 
@@ -151,16 +152,34 @@ class CoursesFragment : Fragment() {
 
         // Smooth scroll to catalog items
         binding.rvCourses.post {
-            (binding.rvCourses.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(1, 0)
+            val total = binding.rvCourses.adapter?.itemCount ?: 0
+            if (total > 1) {
+                (binding.rvCourses.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(1, 0)
+            }
         }
     }
 
     private fun showSearchDropdown() {
-        binding.cardSearchDropdown.visibility = View.VISIBLE
+        if (binding.cardSearchDropdown.visibility != View.VISIBLE) {
+            binding.cardSearchDropdown.alpha = 0f
+            binding.cardSearchDropdown.visibility = View.VISIBLE
+            binding.cardSearchDropdown.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start()
+        }
     }
 
     private fun hideSearchDropdown() {
-        binding.cardSearchDropdown.visibility = View.GONE
+        if (binding.cardSearchDropdown.visibility == View.VISIBLE) {
+            binding.cardSearchDropdown.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction {
+                    binding.cardSearchDropdown.visibility = View.GONE
+                }
+                .start()
+        }
     }
 
     private fun hideKeyboard() {

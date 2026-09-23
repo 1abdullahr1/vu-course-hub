@@ -89,7 +89,7 @@ class HomeFragment : Fragment() {
             binding.layoutEmptyState.visibility = View.GONE
             binding.layoutActiveLearning.visibility = View.VISIBLE
 
-            val heroCourse = recent.firstOrNull() ?: bookmarked.first()
+            val heroCourse = recent.firstOrNull() ?: bookmarked.firstOrNull() ?: enrolled.first()
             bindHeroCourse(heroCourse)
 
             binding.tvMyCoursesCountHeader.text = getString(R.string.view_all_my_courses, enrolled.size)
