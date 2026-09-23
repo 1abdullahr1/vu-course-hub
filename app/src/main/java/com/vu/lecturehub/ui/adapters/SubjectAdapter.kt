@@ -43,31 +43,47 @@ class SubjectAdapter(
 
         fun bind(department: Department) {
             binding.tvSubjectName.text = department.name
-
-            val (iconRes, bgRes) = getCategoryVisuals(department.name)
-            binding.ivSubjectIcon.setImageResource(iconRes)
-            binding.layoutSubjectIconContainer.setBackgroundResource(bgRes)
+            val imageRes = getSubjectImage(department.name)
+            binding.ivSubjectImage.setImageResource(imageRes)
 
             binding.root.setOnClickListener {
                 onSubjectClick(department)
             }
         }
 
-        private fun getCategoryVisuals(deptName: String): Pair<Int, Int> {
+        private fun getSubjectImage(deptName: String): Int {
             val lower = deptName.lowercase()
             return when {
-                lower.contains("computer") || lower.contains("information") || lower.contains("bif") || lower.contains("it") ->
-                    Pair(R.drawable.ic_code, R.drawable.bg_subject_tech)
+                lower.contains("computer") || lower.contains("information") || lower.contains("it") ->
+                    R.drawable.subj_computer_science
                 lower.contains("math") || lower.contains("stat") ->
-                    Pair(R.drawable.ic_calculate, R.drawable.bg_subject_math)
-                lower.contains("finance") || lower.contains("bank") || lower.contains("account") || lower.contains("econom") ->
-                    Pair(R.drawable.ic_trending_up, R.drawable.bg_subject_finance)
-                lower.contains("manage") || lower.contains("marketing") || lower.contains("resource") || lower.contains("public") || lower.contains("mgt") ->
-                    Pair(R.drawable.ic_business, R.drawable.bg_subject_biz)
-                lower.contains("bio") || lower.contains("chem") || lower.contains("phys") || lower.contains("zool") ->
-                    Pair(R.drawable.ic_science, R.drawable.bg_subject_science)
+                    R.drawable.subj_math
+                lower.contains("market") ->
+                    R.drawable.subj_marketing
+                lower.contains("econom") || lower.contains("financ") || lower.contains("bank") || lower.contains("account") ->
+                    R.drawable.subj_economics
+                lower.contains("manage") || lower.contains("resource") || lower.contains("public") || lower.contains("mgt") ->
+                    R.drawable.subj_management
+                lower.contains("bioinform") || lower.contains("bif") ->
+                    R.drawable.subj_bioinformatics
+                lower.contains("biotech") || lower.contains("chem") || lower.contains("phys") ->
+                    R.drawable.subj_biotechnology
+                lower.contains("mass") || lower.contains("comm") || lower.contains("mcd") ->
+                    R.drawable.subj_mass_comm
+                lower.contains("psych") || lower.contains("psyp") ->
+                    R.drawable.subj_psychology
+                lower.contains("socio") || lower.contains("pakistan") || lower.contains("islam") ->
+                    R.drawable.subj_sociology
+                lower.contains("zool") ->
+                    R.drawable.subj_zoology
+                lower.contains("edua") || lower.contains("ece") ->
+                    R.drawable.subj_edua
+                lower.contains("educ") ->
+                    R.drawable.subj_education
+                lower.contains("english") || lower.contains("urdu") ->
+                    R.drawable.subj_english
                 else ->
-                    Pair(R.drawable.ic_book, R.drawable.bg_subject_humanities)
+                    R.drawable.subj_general
             }
         }
     }
