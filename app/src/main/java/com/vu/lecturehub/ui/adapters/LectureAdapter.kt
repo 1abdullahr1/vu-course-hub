@@ -9,9 +9,17 @@ import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.databinding.ItemLectureRowBinding
 
 class LectureAdapter(
-    private val lectures: List<Lecture>,
+    initialLectures: List<Lecture>,
     private val onLectureClick: (Lecture) -> Unit
 ) : RecyclerView.Adapter<LectureAdapter.LectureViewHolder>() {
+
+    private val lectures = initialLectures.toMutableList()
+
+    fun updateLectures(newLectures: List<Lecture>) {
+        lectures.clear()
+        lectures.addAll(newLectures)
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LectureViewHolder {
         val binding = ItemLectureRowBinding.inflate(

@@ -20,6 +20,8 @@ class CourseDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCourseDetailBinding
     private lateinit var repository: CourseRepository
     private var currentCourse: Course? = null
+    private var currentLectures: List<Lecture> = emptyList()
+    private lateinit var lectureAdapter: LectureAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +42,7 @@ class CourseDetailActivity : AppCompatActivity() {
         populateCourseDetails(currentCourse!!)
         setupLecturesList(currentCourse!!)
         setupActionButtons(currentCourse!!)
+        loadRealLectures(currentCourse!!)
     }
 
     private fun setupToolbar() {
@@ -68,7 +71,16 @@ class CourseDetailActivity : AppCompatActivity() {
     private fun setupActionButtons(course: Course) {
         binding.btnPlayFirst.setOnClickListener {
             val lectureIndex = if (course.lastWatchedLectureIndex > 0) course.lastWatchedLectureIndex else 1
-            playLecture(course, lectureIndex)
+            val targetLecture = currentLectures.find { it.lectureIndex == lectureIndex }
+                ?: currentLectures.firstOrNull()
+                ?: Lecture(
+                    playlistId = course.playlistId,
+                    lectureIndex = 1,
+                    title = "Lecture 01 - ${course.title}",
+                    videoId = course.firstVideoId,
+                    thumbnailUrl = course.thumbnailUrl
+                )
+            playLecture(course, targetLecture)
         }
 
         binding.btnBookmarkToggle.setOnClickListener {
@@ -91,21 +103,31 @@ class CourseDetailActivity : AppCompatActivity() {
     }
 
     private fun setupLecturesList(course: Course) {
-        val lectures = repository.generateLectures(course)
-        val adapter = LectureAdapter(lectures) { lecture ->
-            playLecture(course, lecture.lectureIndex)
+        currentLectures = repository.generateLectures(course)
+        lectureAdapter = LectureAdapter(currentLectures) { lecture ->
+            playLecture(course, lecture)
         }
 
         binding.rvDetailLectures.apply {
             layoutManager = LinearLayoutManager(this@CourseDetailActivity)
-            this.adapter = adapter
+            this.adapter = lectureAdapter
         }
     }
 
-    private fun playLecture(course: Course, lectureIndex: Int) {
+    private fun loadRealLectures(course: Course) {
+        lifecycleScope.launch {
+            val realLectures = repository.fetchPlaylistVideos(course)
+            if (realLectures.isNotEmpty()) {
+                currentLectures = realLectures
+                lectureAdapter.updateLectures(realLectures)
+            }
+        }
+    }
+
+    private fun playLecture(course: Course, lecture: Lecture) {
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra("EXTRA_COURSE", course)
-            putExtra("EXTRA_LECTURE_INDEX", lectureIndex)
+            putExtra("EXTRA_LECTURE", lecture)
         }
         startActivity(intent)
     }

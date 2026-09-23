@@ -16,6 +16,7 @@ data class Course(
     val videoCountText: String?,
     val thumbnailUrl: String?,
     val playlistUrl: String?,
+    val firstVideoId: String? = null,
     var isBookmarked: Boolean = false,
     var lastWatchedTimestamp: Long = 0L,
     var lastWatchedLectureIndex: Int = 1

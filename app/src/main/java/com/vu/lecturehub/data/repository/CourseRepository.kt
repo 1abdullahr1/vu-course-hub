@@ -2,6 +2,7 @@ package com.vu.lecturehub.data.repository
 
 import android.content.Context
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import com.vu.lecturehub.data.db.AppDatabase
 import com.vu.lecturehub.data.model.Course
@@ -11,6 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 
 class CourseRepository(private val context: Context) {
 
@@ -66,10 +69,104 @@ class CourseRepository(private val context: Context) {
                 playlistId = course.playlistId,
                 lectureIndex = idx,
                 title = "Lecture $formattedIdx - ${course.courseCode ?: course.title}",
+                videoId = if (idx == 1) course.firstVideoId else null,
                 thumbnailUrl = course.thumbnailUrl,
                 isCompleted = idx < course.lastWatchedLectureIndex
             )
         }
+    }
+
+    suspend fun fetchPlaylistVideos(course: Course): List<Lecture> = withContext(Dispatchers.IO) {
+        try {
+            val url = URL("https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+            conn.doOutput = true
+
+            val requestBody = """
+                {
+                    "context": {
+                        "client": {
+                            "clientName": "WEB",
+                            "clientVersion": "2.20260921.01.00",
+                            "hl": "en",
+                            "gl": "US"
+                        }
+                    },
+                    "browseId": "VL${course.playlistId}"
+                }
+            """.trimIndent()
+
+            conn.outputStream.use { os ->
+                os.write(requestBody.toByteArray())
+            }
+
+            if (conn.responseCode == 200) {
+                val responseText = conn.inputStream.bufferedReader().use { it.readText() }
+                val jsonObject = JsonParser.parseString(responseText).asJsonObject
+                val tabs = jsonObject.getAsJsonObject("contents")
+                    ?.getAsJsonObject("twoColumnBrowseResultsRenderer")
+                    ?.getAsJsonArray("tabs")
+                val contents = tabs?.get(0)?.asJsonObject
+                    ?.getAsJsonObject("tabRenderer")
+                    ?.getAsJsonObject("content")
+                    ?.getAsJsonObject("sectionListRenderer")
+                    ?.getAsJsonArray("contents")
+                val items = contents?.get(0)?.asJsonObject
+                    ?.getAsJsonObject("itemSectionRenderer")
+                    ?.getAsJsonArray("contents")
+
+                val lectures = mutableListOf<Lecture>()
+                var idx = 1
+                if (items != null) {
+                    for (elem in items) {
+                        val itemObj = elem.asJsonObject
+                        var videoId: String? = null
+                        var title: String? = null
+
+                        if (itemObj.has("lockupViewModel")) {
+                            val lockup = itemObj.getAsJsonObject("lockupViewModel")
+                            videoId = lockup.get("contentId")?.asString
+                            title = lockup.getAsJsonObject("metadata")
+                                ?.getAsJsonObject("lockupMetadataViewModel")
+                                ?.getAsJsonObject("title")
+                                ?.get("content")?.asString
+                        } else if (itemObj.has("playlistVideoRenderer")) {
+                            val plVideo = itemObj.getAsJsonObject("playlistVideoRenderer")
+                            videoId = plVideo.get("videoId")?.asString
+                            title = plVideo.getAsJsonObject("title")
+                                ?.getAsJsonArray("runs")?.get(0)?.asJsonObject
+                                ?.get("text")?.asString
+                        }
+
+                        if (!videoId.isNullOrEmpty()) {
+                            val formattedNum = String.format("%02d", idx)
+                            lectures.add(
+                                Lecture(
+                                    playlistId = course.playlistId,
+                                    lectureIndex = idx,
+                                    title = title ?: "Lecture $formattedNum - ${course.title}",
+                                    videoId = videoId,
+                                    thumbnailUrl = "https://i.ytimg.com/vi/$videoId/hqdefault.jpg",
+                                    isCompleted = idx < course.lastWatchedLectureIndex
+                                )
+                            )
+                            idx++
+                        }
+                    }
+                }
+
+                if (lectures.isNotEmpty()) {
+                    return@withContext lectures
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return@withContext generateLectures(course)
     }
 
     fun extractDepartments(courses: List<Course>): List<Department> {
