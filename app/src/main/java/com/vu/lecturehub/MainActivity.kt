@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
         val miniPlayerHeight = (64 * density).toInt()
         val bottomNavHeight = (80 * density).toInt()
 
-        playerBehavior.peekHeight = miniPlayerHeight
+        playerBehavior.peekHeight = miniPlayerHeight + bottomNavHeight
 
         playerBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
@@ -229,9 +229,6 @@ class MainActivity : AppCompatActivity() {
 
                 // Slide bottom nav down smoothly as sheet expands
                 binding.bottomNavigation.translationY = bottomNavHeight * offset
-
-                // Extend sheet down by 80dp as bottom nav disappears so full player covers entire screen
-                bottomSheet.translationY = bottomNavHeight * offset
 
                 // Fade mini player bar out as player expands
                 val miniAlpha = (1f - offset * 3f).coerceIn(0f, 1f)
@@ -247,15 +244,15 @@ class MainActivity : AppCompatActivity() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
                 when (newState) {
                     BottomSheetBehavior.STATE_EXPANDED -> {
+                        playerBehavior.isHideable = false
                         binding.bottomNavigation.translationY = bottomNavHeight.toFloat()
-                        bottomSheet.translationY = bottomNavHeight.toFloat()
                         binding.slidingPlayer.miniPlayerBar.visibility = View.GONE
                         binding.slidingPlayer.expandedPlayerLayout.visibility = View.VISIBLE
                         binding.slidingPlayer.expandedPlayerLayout.alpha = 1f
                     }
                     BottomSheetBehavior.STATE_COLLAPSED -> {
+                        playerBehavior.isHideable = false
                         binding.bottomNavigation.translationY = 0f
-                        bottomSheet.translationY = 0f
                         binding.slidingPlayer.miniPlayerBar.visibility = View.VISIBLE
                         binding.slidingPlayer.miniPlayerBar.alpha = 1f
                         binding.slidingPlayer.expandedPlayerLayout.visibility = View.GONE
@@ -263,7 +260,6 @@ class MainActivity : AppCompatActivity() {
                     }
                     BottomSheetBehavior.STATE_HIDDEN -> {
                         binding.bottomNavigation.translationY = 0f
-                        bottomSheet.translationY = 0f
                         pauseVideo()
                     }
                     else -> {}
@@ -483,6 +479,7 @@ class MainActivity : AppCompatActivity() {
         updateMiniPlayerInfo(course, currentLecture!!)
 
         // Show player bottom sheet expanded
+        playerBehavior.isHideable = false
         playerBehavior.state = BottomSheetBehavior.STATE_EXPANDED
 
         // Show instant cached thumbnail overlay with loading spinner
