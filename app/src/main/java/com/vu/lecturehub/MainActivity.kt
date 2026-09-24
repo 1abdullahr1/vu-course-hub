@@ -261,16 +261,24 @@ class MainActivity : AppCompatActivity() {
                     BottomSheetBehavior.STATE_HIDDEN -> {
                         binding.bottomNavigation.translationY = 0f
                         pauseVideo()
+                        binding.slidingPlayer.playerWebView.loadUrl("about:blank")
+                        currentLoadedVideoId = null
+                        currentCourse = null
+                        currentLecture = null
                     }
                     else -> {}
                 }
             }
         })
 
-        // Tap mini player bar to expand into full player
-        binding.slidingPlayer.miniPlayerBar.setOnClickListener {
+        // Tap anywhere on mini player bar to expand into full player
+        val expandListener = View.OnClickListener {
             playerBehavior.state = BottomSheetBehavior.STATE_EXPANDED
         }
+        binding.slidingPlayer.miniPlayerBar.setOnClickListener(expandListener)
+        binding.slidingPlayer.ivMiniThumbnail.setOnClickListener(expandListener)
+        binding.slidingPlayer.tvMiniTitle.setOnClickListener(expandListener)
+        binding.slidingPlayer.tvMiniSubtitle.setOnClickListener(expandListener)
 
         // Tap collapse chevron (down arrow) to collapse into mini player
         binding.slidingPlayer.btnCollapsePlayer.setOnClickListener {
@@ -289,6 +297,7 @@ class MainActivity : AppCompatActivity() {
         // Mini player close button
         binding.slidingPlayer.btnMiniClose.setOnClickListener {
             pauseVideo()
+            playerBehavior.isHideable = true
             playerBehavior.state = BottomSheetBehavior.STATE_HIDDEN
         }
     }
