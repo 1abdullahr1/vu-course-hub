@@ -18,20 +18,21 @@
         android:layout_gravity="bottom"
         android:background="?attr/colorSurface"
         android:theme="@style/ThemeOverlay.VULectureHub.BottomNav"
-        app:elevation="8dp"
+        app:elevation="16dp"
         app:itemIconTint="@color/nav_item_tint"
         app:itemTextColor="@color/nav_item_tint"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
-    <!-- Persistent Sliding Player Bottom Sheet -->
+    <!-- Persistent Sliding Player Bottom Sheet (Docked cleanly above bottom nav when collapsed) -->
     <include
         android:id="@+id/sliding_player"
         layout="@layout/view_sliding_player"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginBottom="80dp"
         app:behavior_hideable="true"
-        app:behavior_peekHeight="144dp"
+        app:behavior_peekHeight="64dp"
         app:behavior_skipCollapsed="false"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior" />
 

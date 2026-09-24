@@ -218,43 +218,52 @@ class MainActivity : AppCompatActivity() {
         playerBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
         val density = resources.displayMetrics.density
-        // Mini player height (64dp) + bottom nav height (80dp) = 144dp
-        playerBehavior.peekHeight = (144 * density).toInt()
+        val miniPlayerHeight = (64 * density).toInt()
+        val bottomNavHeight = (80 * density).toInt()
+
+        playerBehavior.peekHeight = miniPlayerHeight
 
         playerBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                if (slideOffset >= 0f) {
-                    // Slide bottom nav down smoothly as sheet expands
-                    val navHeight = binding.bottomNavigation.height.toFloat()
-                    binding.bottomNavigation.translationY = navHeight * slideOffset
+                val offset = slideOffset.coerceIn(0f, 1f)
 
-                    // Fade mini player bar out as player expands
-                    val miniAlpha = (1f - slideOffset * 3f).coerceIn(0f, 1f)
-                    binding.slidingPlayer.miniPlayerBar.alpha = miniAlpha
-                    binding.slidingPlayer.miniPlayerBar.visibility = if (miniAlpha > 0.05f) View.VISIBLE else View.GONE
+                // Slide bottom nav down smoothly as sheet expands
+                binding.bottomNavigation.translationY = bottomNavHeight * offset
 
-                    // Fade expanded player view in
-                    val expandedAlpha = (slideOffset * 2f - 0.5f).coerceIn(0f, 1f)
-                    binding.slidingPlayer.expandedPlayerLayout.alpha = expandedAlpha
-                }
+                // Extend sheet down by 80dp as bottom nav disappears so full player covers entire screen
+                bottomSheet.translationY = bottomNavHeight * offset
+
+                // Fade mini player bar out as player expands
+                val miniAlpha = (1f - offset * 3f).coerceIn(0f, 1f)
+                binding.slidingPlayer.miniPlayerBar.alpha = miniAlpha
+                binding.slidingPlayer.miniPlayerBar.visibility = if (miniAlpha > 0.05f) View.VISIBLE else View.GONE
+
+                // Fade expanded player view in
+                val expandedAlpha = (offset * 2f - 0.5f).coerceIn(0f, 1f)
+                binding.slidingPlayer.expandedPlayerLayout.alpha = expandedAlpha
+                binding.slidingPlayer.expandedPlayerLayout.visibility = if (expandedAlpha > 0.05f) View.VISIBLE else View.GONE
             }
 
             override fun onStateChanged(bottomSheet: View, newState: Int) {
                 when (newState) {
                     BottomSheetBehavior.STATE_EXPANDED -> {
-                        binding.bottomNavigation.translationY = binding.bottomNavigation.height.toFloat()
+                        binding.bottomNavigation.translationY = bottomNavHeight.toFloat()
+                        bottomSheet.translationY = bottomNavHeight.toFloat()
                         binding.slidingPlayer.miniPlayerBar.visibility = View.GONE
                         binding.slidingPlayer.expandedPlayerLayout.visibility = View.VISIBLE
                         binding.slidingPlayer.expandedPlayerLayout.alpha = 1f
                     }
                     BottomSheetBehavior.STATE_COLLAPSED -> {
                         binding.bottomNavigation.translationY = 0f
+                        bottomSheet.translationY = 0f
                         binding.slidingPlayer.miniPlayerBar.visibility = View.VISIBLE
                         binding.slidingPlayer.miniPlayerBar.alpha = 1f
+                        binding.slidingPlayer.expandedPlayerLayout.visibility = View.GONE
                         binding.slidingPlayer.expandedPlayerLayout.alpha = 0f
                     }
                     BottomSheetBehavior.STATE_HIDDEN -> {
                         binding.bottomNavigation.translationY = 0f
+                        bottomSheet.translationY = 0f
                         pauseVideo()
                     }
                     else -> {}
