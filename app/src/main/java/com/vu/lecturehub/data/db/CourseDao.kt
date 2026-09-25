@@ -17,7 +17,7 @@ interface CourseDao {
     @Query("SELECT * FROM courses WHERE isBookmarked = 1")
     fun getBookmarkedCourses(): Flow<List<Course>>
 
-    @Query("SELECT * FROM courses WHERE lastWatchedTimestamp > 0 ORDER BY lastWatchedTimestamp DESC LIMIT 10")
+    @Query("SELECT * FROM courses WHERE lastWatchedTimestamp > 0 ORDER BY lastWatchedTimestamp DESC")
     fun getRecentlyWatchedCourses(): Flow<List<Course>>
 
     @Query("SELECT * FROM courses WHERE playlistId = :id LIMIT 1")

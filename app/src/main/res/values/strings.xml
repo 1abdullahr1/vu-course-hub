@@ -35,4 +35,21 @@
     <string name="most_popular_programs">Most popular courses</string>
     <string name="trending_now">Trending now</string>
     <string name="play">Play</string>
+
+    <!-- My Learning Tab Strings -->
+    <string name="my_learning">My Learning</string>
+    <string name="your_courses">Your Courses</string>
+    <string name="bookmarked">Bookmarked</string>
+    <string name="recently_watched">Recently Watched</string>
+    <string name="see_all">See all</string>
+    <string name="show_less">Show less</string>
+    <string name="clear">Clear</string>
+    <string name="continue_lecture_format">Continue: Lecture %d</string>
+    <string name="progress_format">Progress: %d%%</string>
+    <string name="empty_my_learning_title">Start Your Learning Journey</string>
+    <string name="empty_my_learning_desc">Courses you study, bookmarks, and recently watched lectures will appear here.</string>
+    <string name="explore_courses">Explore Courses</string>
+    <string name="clear_history_title">Clear Watch History</string>
+    <string name="clear_history_message">Are you sure you want to clear your recently watched lectures history?</string>
+    <string name="cancel">Cancel</string>
 </resources>

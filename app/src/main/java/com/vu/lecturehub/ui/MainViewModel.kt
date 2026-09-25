@@ -15,6 +15,9 @@ import com.vu.lecturehub.data.repository.CourseRepository
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+import com.vu.lecturehub.data.model.WatchHistoryItem
+import com.vu.lecturehub.util.WatchHistoryManager
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val repository = CourseRepository(application)
@@ -22,6 +25,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val allCourses: LiveData<List<Course>> = repository.allCourses.asLiveData()
     val bookmarkedCourses: LiveData<List<Course>> = repository.bookmarkedCourses.asLiveData()
     val recentlyWatchedCourses: LiveData<List<Course>> = repository.recentlyWatchedCourses.asLiveData()
+    val recentVideos: LiveData<List<WatchHistoryItem>> = WatchHistoryManager.historyFlow.asLiveData()
 
     private val _departments = MutableLiveData<List<Department>>(emptyList())
     val departments: LiveData<List<Department>> = _departments
@@ -42,6 +46,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var rawCoursesList: List<Course> = emptyList()
 
     init {
+        WatchHistoryManager.init(application)
         viewModelScope.launch {
             repository.initializeDatabaseIfNeeded()
         }
@@ -133,6 +138,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.toggleBookmark(course)
         }
+    }
+
+    fun clearWatchHistory() {
+        WatchHistoryManager.clearHistory(getApplication())
     }
 
     private fun applyFilters() {

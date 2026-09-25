@@ -26,6 +26,7 @@ import com.vu.lecturehub.data.repository.CourseRepository
 import com.vu.lecturehub.databinding.ActivityPlayerBinding
 import com.vu.lecturehub.ui.adapters.LectureAdapter
 import com.vu.lecturehub.ui.adapters.PlayerHeaderAdapter
+import com.vu.lecturehub.util.WatchHistoryManager
 import kotlinx.coroutines.launch
 
 class PlayerActivity : AppCompatActivity() {
@@ -150,6 +151,17 @@ class PlayerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repository.updateWatchProgress(course.playlistId, lecture.lectureIndex)
         }
+
+        WatchHistoryManager.recordVideoWatch(
+            context = this,
+            playlistId = course.playlistId,
+            courseCode = course.courseCode,
+            courseTitle = course.title,
+            lectureIndex = lecture.lectureIndex,
+            lectureTitle = lecture.title,
+            videoId = lecture.videoId ?: course.firstVideoId,
+            thumbnailUrl = lecture.thumbnailUrl ?: course.thumbnailUrl
+        )
     }
 
     private fun openCurrentOnYoutube() {
@@ -398,6 +410,20 @@ class PlayerActivity : AppCompatActivity() {
         playerHeaderAdapter.updateLecture(lecture)
         lifecycleScope.launch {
             repository.updateWatchProgress(currentCourse!!.playlistId, lecture.lectureIndex)
+        }
+
+        val c = currentCourse
+        if (c != null) {
+            WatchHistoryManager.recordVideoWatch(
+                context = this,
+                playlistId = c.playlistId,
+                courseCode = c.courseCode,
+                courseTitle = c.title,
+                lectureIndex = lecture.lectureIndex,
+                lectureTitle = lecture.title,
+                videoId = lecture.videoId ?: c.firstVideoId,
+                thumbnailUrl = lecture.thumbnailUrl ?: c.thumbnailUrl
+            )
         }
 
         val thumb = if (!lecture.videoId.isNullOrEmpty()) {

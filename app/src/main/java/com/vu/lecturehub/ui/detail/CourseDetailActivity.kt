@@ -43,6 +43,12 @@ class CourseDetailActivity : AppCompatActivity() {
         setupToolbar()
         setupRecyclerView(currentCourse!!)
         loadRealLectures(currentCourse!!)
+
+        lifecycleScope.launch {
+            if (currentCourse!!.lastWatchedTimestamp == 0L) {
+                repository.updateWatchProgress(currentCourse!!.playlistId, 1)
+            }
+        }
     }
 
     private fun setupToolbar() {

@@ -36,6 +36,7 @@ import com.vu.lecturehub.ui.home.HomeFragment
 import com.vu.lecturehub.ui.saved.SavedFragment
 import com.vu.lecturehub.util.PlaybackManager
 import com.vu.lecturehub.util.ThemeManager
+import com.vu.lecturehub.util.WatchHistoryManager
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -502,6 +503,20 @@ class MainActivity : AppCompatActivity() {
         // Setup Queue RecyclerView
         setupQueueRecyclerView(course, currentLecture!!)
 
+        val activeLec = currentLecture
+        if (activeLec != null) {
+            WatchHistoryManager.recordVideoWatch(
+                context = this,
+                playlistId = course.playlistId,
+                courseCode = course.courseCode,
+                courseTitle = course.title,
+                lectureIndex = activeLec.lectureIndex,
+                lectureTitle = activeLec.title,
+                videoId = activeLec.videoId ?: course.firstVideoId,
+                thumbnailUrl = activeLec.thumbnailUrl ?: course.thumbnailUrl
+            )
+        }
+
         // Check for saved timestamp resume position
         val savedPosition = PlaybackManager.getPosition(this, course.playlistId, currentLecture!!.lectureIndex)
 
@@ -597,6 +612,20 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repository.updateWatchProgress(currentCourse!!.playlistId, lecture.lectureIndex)
+        }
+
+        val c = currentCourse
+        if (c != null) {
+            WatchHistoryManager.recordVideoWatch(
+                context = this,
+                playlistId = c.playlistId,
+                courseCode = c.courseCode,
+                courseTitle = c.title,
+                lectureIndex = lecture.lectureIndex,
+                lectureTitle = lecture.title,
+                videoId = lecture.videoId ?: c.firstVideoId,
+                thumbnailUrl = lecture.thumbnailUrl ?: c.thumbnailUrl
+            )
         }
 
         val thumb = if (!lecture.videoId.isNullOrEmpty()) {
@@ -859,6 +888,16 @@ class MainActivity : AppCompatActivity() {
                     currentLecture = matching
                     playerHeaderAdapter?.updateLecture(matching)
                     updateMiniPlayerInfo(course, matching)
+                    WatchHistoryManager.recordVideoWatch(
+                        context = this@MainActivity,
+                        playlistId = course.playlistId,
+                        courseCode = course.courseCode,
+                        courseTitle = course.title,
+                        lectureIndex = matching.lectureIndex,
+                        lectureTitle = matching.title,
+                        videoId = matching.videoId ?: course.firstVideoId,
+                        thumbnailUrl = matching.thumbnailUrl ?: course.thumbnailUrl
+                    )
                 }
             }
         }
