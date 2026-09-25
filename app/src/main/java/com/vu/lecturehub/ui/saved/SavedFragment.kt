@@ -218,9 +218,12 @@ class SavedFragment : Fragment() {
                 title = item.courseTitle,
                 courseCode = item.courseCode,
                 department = "Virtual University",
-                thumbnailUrl = item.thumbnailUrl,
-                firstVideoId = item.videoId,
+                isAcademicCourse = true,
                 videoCount = 45,
+                videoCountText = "45 lectures",
+                thumbnailUrl = item.thumbnailUrl,
+                playlistUrl = "https://www.youtube.com/playlist?list=${item.playlistId}",
+                firstVideoId = item.videoId,
                 lastWatchedLectureIndex = item.lectureIndex,
                 lastWatchedTimestamp = item.watchedTimestamp
             )
