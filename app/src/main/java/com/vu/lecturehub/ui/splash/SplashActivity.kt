@@ -12,6 +12,8 @@ import android.view.WindowInsetsController
 import androidx.appcompat.app.AppCompatActivity
 import com.vu.lecturehub.MainActivity
 import com.vu.lecturehub.databinding.ActivitySplashBinding
+import com.vu.lecturehub.ui.onboarding.OnboardingActivity
+import com.vu.lecturehub.util.OnboardingManager
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
@@ -39,21 +41,27 @@ class SplashActivity : AppCompatActivity() {
 
         // Allow instant tap to skip splash if user wants
         binding.root.setOnClickListener {
-            proceedToMain()
+            proceedToNext()
         }
 
         // Automatically transition after animation
         handler.postDelayed({
-            proceedToMain()
+            proceedToNext()
         }, 2200)
     }
 
-    private fun proceedToMain() {
+    private fun proceedToNext() {
         if (hasNavigated || isFinishing || isDestroyed) return
         hasNavigated = true
         handler.removeCallbacksAndMessages(null)
 
-        val intent = Intent(this, MainActivity::class.java)
+        val targetClass = if (!OnboardingManager.isOnboardingCompleted(this)) {
+            OnboardingActivity::class.java
+        } else {
+            MainActivity::class.java
+        }
+
+        val intent = Intent(this, targetClass)
         startActivity(intent)
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()

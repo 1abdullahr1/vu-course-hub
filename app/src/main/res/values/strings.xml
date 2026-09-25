@@ -67,4 +67,15 @@
     <string name="tool_placeholder_title">Tool Information</string>
     <string name="tool_placeholder_desc">This educational tool will be fully interactive in the upcoming update.</string>
     <string name="close">Close</string>
+
+    <!-- Onboarding Strings -->
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_title_1">100% Free &amp; No Ads</string>
+    <string name="onboarding_desc_1">Study without interruptions or paywalls.</string>
+    <string name="onboarding_title_2">All VU Lectures &amp; Handouts</string>
+    <string name="onboarding_desc_2">475+ courses and direct handouts in one place.</string>
+    <string name="onboarding_title_3">Fast Resume &amp; Bookmarks</string>
+    <string name="onboarding_desc_3">Track your progress and resume anytime.</string>
 </resources>

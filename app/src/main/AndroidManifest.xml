@@ -56,6 +56,11 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <!-- Onboarding Activity -->
+        <activity
+            android:name=".ui.onboarding.OnboardingActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
