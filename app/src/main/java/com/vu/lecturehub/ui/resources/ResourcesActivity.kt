@@ -68,6 +68,7 @@ class ResourcesActivity : AppCompatActivity() {
         }
 
         binding.viewPager.adapter = pagerAdapter
+        binding.viewPager.isUserInputEnabled = false
 
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.text = when (position) {
@@ -81,7 +82,7 @@ class ResourcesActivity : AppCompatActivity() {
 
     private fun setupSearch() {
         searchHandoutAdapter = HandoutAdapter(emptyList()) { item ->
-            ResourcesRepository.openHandoutInBrowser(this@ResourcesActivity, item.courseCode)
+            ResourcesRepository.openHandoutInBrowser(this@ResourcesActivity, item.courseCode, item.title)
         }
 
         searchLinkAdapter = LinkAdapter(emptyList()) { item ->

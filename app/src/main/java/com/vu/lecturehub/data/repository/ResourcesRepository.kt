@@ -67,16 +67,22 @@ object ResourcesRepository {
         return links.filter { it.title.lowercase().contains(q) }
     }
 
-    fun openHandoutInBrowser(context: Context, courseCode: String) {
-        val query = "$courseCode VU handouts filetype:pdf"
+    fun openHandoutInBrowser(context: Context, courseCode: String, courseTitle: String = "") {
+        val cleanTitle = courseTitle.replace(Regex("^$courseCode\\s*[-–—:]?\\s*", RegexOption.IGNORE_CASE), "").trim()
+        val query = if (cleanTitle.isNotEmpty()) {
+            "$courseCode $cleanTitle VU handouts filetype:pdf"
+        } else {
+            "$courseCode VU handouts filetype:pdf"
+        }
         val url = "https://www.google.com/search?q=" + Uri.encode(query)
         openUrlInBrowser(context, url)
     }
 
     fun openUrlInBrowser(context: Context, url: String) {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
             context.startActivity(intent)
         } catch (e: Exception) {
             e.printStackTrace()
