@@ -1,8 +1,6 @@
 package com.vu.lecturehub.ui.resources
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,21 +8,21 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayoutMediator
 import com.vu.lecturehub.R
-import com.vu.lecturehub.data.model.ResourceItem
-import com.vu.lecturehub.data.model.ResourceType
 import com.vu.lecturehub.data.repository.ResourcesRepository
 import com.vu.lecturehub.databinding.ActivityResourcesBinding
-import com.vu.lecturehub.ui.adapters.ResourceAdapter
+import com.vu.lecturehub.ui.adapters.HandoutAdapter
+import com.vu.lecturehub.ui.adapters.LinkAdapter
 
 class ResourcesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityResourcesBinding
-    private lateinit var searchAdapter: ResourceAdapter
+    private lateinit var searchHandoutAdapter: HandoutAdapter
+    private lateinit var searchLinkAdapter: LinkAdapter
     private var isSearchActive = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,10 +59,10 @@ class ResourcesActivity : AppCompatActivity() {
 
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
-                    0 -> ResourceListFragment.newInstance(ResourceType.HANDOUT)
-                    1 -> ResourceListFragment.newInstance(ResourceType.LINK)
-                    2 -> ResourceListFragment.newInstance(ResourceType.TOOL)
-                    else -> ResourceListFragment.newInstance(ResourceType.HANDOUT)
+                    0 -> HandoutsFragment()
+                    1 -> LinksFragment()
+                    2 -> ToolsFragment()
+                    else -> HandoutsFragment()
                 }
             }
         }
@@ -82,13 +80,19 @@ class ResourcesActivity : AppCompatActivity() {
     }
 
     private fun setupSearch() {
-        searchAdapter = ResourceAdapter(emptyList()) { item ->
-            handleItemClick(item)
+        searchHandoutAdapter = HandoutAdapter(emptyList()) { item ->
+            ResourcesRepository.openHandoutInBrowser(this@ResourcesActivity, item.courseCode)
         }
+
+        searchLinkAdapter = LinkAdapter(emptyList()) { item ->
+            ResourcesRepository.openUrlInBrowser(this@ResourcesActivity, item.url)
+        }
+
+        val concatAdapter = ConcatAdapter(searchHandoutAdapter, searchLinkAdapter)
 
         binding.rvSearchResults.apply {
             layoutManager = LinearLayoutManager(this@ResourcesActivity)
-            adapter = searchAdapter
+            adapter = concatAdapter
             setHasFixedSize(true)
         }
 
@@ -131,51 +135,26 @@ class ResourcesActivity : AppCompatActivity() {
 
     private fun performSearch(query: String) {
         if (query.isEmpty()) {
-            searchAdapter.updateItems(emptyList())
+            searchHandoutAdapter.updateItems(emptyList())
+            searchLinkAdapter.updateItems(emptyList())
             binding.layoutSearchEmpty.visibility = View.GONE
             binding.rvSearchResults.visibility = View.VISIBLE
             return
         }
 
-        val results = ResourcesRepository.searchResources(query)
-        searchAdapter.updateItems(results)
+        val handouts = ResourcesRepository.searchHandouts(this@ResourcesActivity, query)
+        val links = ResourcesRepository.searchLinks(query)
 
-        if (results.isEmpty()) {
+        searchHandoutAdapter.updateItems(handouts)
+        searchLinkAdapter.updateItems(links)
+
+        val totalEmpty = handouts.isEmpty() && links.isEmpty()
+        if (totalEmpty) {
             binding.layoutSearchEmpty.visibility = View.VISIBLE
             binding.rvSearchResults.visibility = View.GONE
         } else {
             binding.layoutSearchEmpty.visibility = View.GONE
             binding.rvSearchResults.visibility = View.VISIBLE
-        }
-    }
-
-    private fun handleItemClick(item: ResourceItem) {
-        when (item.type) {
-            ResourceType.LINK -> {
-                val url = item.targetUrl
-                if (!url.isNullOrEmpty()) {
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        startActivity(intent)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            }
-            ResourceType.HANDOUT -> {
-                MaterialAlertDialogBuilder(this)
-                    .setTitle(item.title)
-                    .setMessage("${item.description}\n\nFormat: ${item.badgeText ?: "PDF"}\n\nThis official document can be downloaded or accessed directly via your student VULMS portal account.")
-                    .setPositiveButton(R.string.close, null)
-                    .show()
-            }
-            ResourceType.TOOL -> {
-                MaterialAlertDialogBuilder(this)
-                    .setTitle(item.title)
-                    .setMessage("${item.description}\n\n${getString(R.string.tool_placeholder_desc)}")
-                    .setPositiveButton(R.string.close, null)
-                    .show()
-            }
         }
     }
 

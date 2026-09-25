@@ -148,7 +148,7 @@
                 android:clipToPadding="false"
                 android:paddingTop="8dp"
                 android:paddingBottom="24dp"
-                tools:listitem="@layout/item_resource_card" />
+                tools:listitem="@layout/item_handout_row" />
 
             <!-- Empty Search State -->
             <LinearLayout

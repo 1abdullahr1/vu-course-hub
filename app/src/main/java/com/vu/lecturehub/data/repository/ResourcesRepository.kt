@@ -1,179 +1,148 @@
 package com.vu.lecturehub.data.repository
 
-import com.vu.lecturehub.R
-import com.vu.lecturehub.data.model.ResourceItem
-import com.vu.lecturehub.data.model.ResourceType
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.vu.lecturehub.data.model.Course
+import com.vu.lecturehub.data.model.HandoutCourse
+import com.vu.lecturehub.data.model.ResourceLink
+import java.io.InputStreamReader
 
 object ResourcesRepository {
 
-    val handouts: List<ResourceItem> = listOf(
-        ResourceItem(
-            id = "handout_1",
-            title = "Student Handbook",
-            description = "Official student guide, policies, code of conduct, and academic integrity guidelines.",
-            type = ResourceType.HANDOUT,
-            badgeText = "PDF • 2.4 MB",
-            iconRes = R.drawable.ic_book
-        ),
-        ResourceItem(
-            id = "handout_2",
-            title = "Academic Regulations",
-            description = "General regulations governing semester rules, grading scale, and degree requirements.",
-            type = ResourceType.HANDOUT,
-            badgeText = "PDF • 1.8 MB",
-            iconRes = R.drawable.ic_book
-        ),
-        ResourceItem(
-            id = "handout_3",
-            title = "Course Selection Guide",
-            description = "Instructions on selecting core, elective, and prerequisite courses each semester.",
-            type = ResourceType.HANDOUT,
-            badgeText = "PDF • 950 KB",
-            iconRes = R.drawable.ic_book
-        ),
-        ResourceItem(
-            id = "handout_4",
-            title = "Examination Rules & Grading System",
-            description = "Detailed guidelines on midterm and final term exams, weightages, and paper patterns.",
-            type = ResourceType.HANDOUT,
-            badgeText = "PDF • 1.2 MB",
-            iconRes = R.drawable.ic_book
-        ),
-        ResourceItem(
-            id = "handout_5",
-            title = "Fee Structure & Installment Guide",
-            description = "Comprehensive schedule of fees, payment vouchers, and financial aid procedures.",
-            type = ResourceType.HANDOUT,
-            badgeText = "PDF • 800 KB",
-            iconRes = R.drawable.ic_book
-        ),
-        ResourceItem(
-            id = "handout_6",
-            title = "Degree & Transcript Issuance Procedure",
-            description = "Step-by-step instructions for obtaining interim transcripts and final degree certificates.",
-            type = ResourceType.HANDOUT,
-            badgeText = "PDF • 650 KB",
-            iconRes = R.drawable.ic_book
-        ),
-        ResourceItem(
-            id = "handout_7",
-            title = "LMS Assignment & Quiz Policies",
-            description = "Rules regarding assignment deadlines, plagiarism checks, and quiz conduct.",
-            type = ResourceType.HANDOUT,
-            badgeText = "PDF • 520 KB",
-            iconRes = R.drawable.ic_book
-        )
+    private var cachedHandouts: List<HandoutCourse>? = null
+    private var cachedDepartments: List<String>? = null
+
+    val links: List<ResourceLink> = listOf(
+        ResourceLink("Virtual University LMS (VULMS)", "https://vulms.vu.edu.pk"),
+        ResourceLink("VU Official Website", "https://www.vu.edu.pk"),
+        ResourceLink("VU Digital Library", "https://library.vu.edu.pk"),
+        ResourceLink("VU Date Sheet System", "https://datesheet.vu.edu.pk"),
+        ResourceLink("Official YouTube Channel", "https://www.youtube.com/@VirtualUniversityofPakistan"),
+        ResourceLink("Student Notice Board", "https://www.vu.edu.pk/NewsNotice.aspx"),
+        ResourceLink("VU Admissions Portal", "https://www.vu.edu.pk/apply"),
+        ResourceLink("VU Past Papers & Solutions", "https://www.google.com/search?q=Virtual+University+past+papers+filetype:pdf")
     )
 
-    val links: List<ResourceItem> = listOf(
-        ResourceItem(
-            id = "link_1",
-            title = "Virtual University LMS (VULMS)",
-            description = "Access your enrolled courses, announcements, assignments, and lecture materials.",
-            type = ResourceType.LINK,
-            targetUrl = "https://vulms.vu.edu.pk",
-            badgeText = "vulms.vu.edu.pk",
-            iconRes = R.drawable.ic_school
-        ),
-        ResourceItem(
-            id = "link_2",
-            title = "Official VU Website",
-            description = "Virtual University main web portal, admissions, academic calendar, and faculties.",
-            type = ResourceType.LINK,
-            targetUrl = "https://www.vu.edu.pk",
-            badgeText = "vu.edu.pk",
-            iconRes = R.drawable.ic_school
-        ),
-        ResourceItem(
-            id = "link_3",
-            title = "VU Digital Library",
-            description = "Access thousands of online research journals, e-books, and reference databases.",
-            type = ResourceType.LINK,
-            targetUrl = "https://library.vu.edu.pk",
-            badgeText = "library.vu.edu.pk",
-            iconRes = R.drawable.ic_library
-        ),
-        ResourceItem(
-            id = "link_4",
-            title = "Official YouTube Channel",
-            description = "Stream official Virtual University lecture broadcasts, webinars, and ceremonies.",
-            type = ResourceType.LINK,
-            targetUrl = "https://www.youtube.com/@VirtualUniversityofPakistan",
-            badgeText = "youtube.com",
-            iconRes = R.drawable.ic_subscriptions
-        ),
-        ResourceItem(
-            id = "link_5",
-            title = "Student Notice Board",
-            description = "Stay updated with important announcements, date sheets, and result notices.",
-            type = ResourceType.LINK,
-            targetUrl = "https://www.vu.edu.pk/NewsNotice.aspx",
-            badgeText = "vu.edu.pk/notice",
-            iconRes = R.drawable.ic_bell
-        ),
-        ResourceItem(
-            id = "link_6",
-            title = "VU Examination Portal",
-            description = "Download official VU Exam Software and manage your examination schedule.",
-            type = ResourceType.LINK,
-            targetUrl = "https://datesheet.vu.edu.pk",
-            badgeText = "datesheet.vu.edu.pk",
-            iconRes = R.drawable.ic_school
-        )
-    )
+    fun getHandouts(context: Context): List<HandoutCourse> {
+        if (cachedHandouts != null) return cachedHandouts!!
+        val list = loadHandoutsFromAssets(context)
+        cachedHandouts = list
+        return list
+    }
 
-    val tools: List<ResourceItem> = listOf(
-        ResourceItem(
-            id = "tool_1",
-            title = "Semester GPA Calculator",
-            description = "Calculate your estimated Grade Point Average for the current semester based on credit hours and grades.",
-            type = ResourceType.TOOL,
-            badgeText = "Calculator",
-            iconRes = R.drawable.ic_calculate
-        ),
-        ResourceItem(
-            id = "tool_2",
-            title = "Cumulative CGPA Calculator",
-            description = "Compute your overall CGPA across all completed semesters and projected future terms.",
-            type = ResourceType.TOOL,
-            badgeText = "Calculator",
-            iconRes = R.drawable.ic_calculate
-        ),
-        ResourceItem(
-            id = "tool_3",
-            title = "Percentage to CGPA Converter",
-            description = "Convert percentage scores to the official Virtual University 4.0 scale accurately.",
-            type = ResourceType.TOOL,
-            badgeText = "Converter",
-            iconRes = R.drawable.ic_calculate
-        ),
-        ResourceItem(
-            id = "tool_4",
-            title = "Final Exam Target Score Estimator",
-            description = "Determine the exact final exam score needed to attain your desired letter grade.",
-            type = ResourceType.TOOL,
-            badgeText = "Estimator",
-            iconRes = R.drawable.ic_calculate
-        ),
-        ResourceItem(
-            id = "tool_5",
-            title = "Credit Hours & Workload Planner",
-            description = "Plan your weekly study schedule and coursework balance across enrolled subjects.",
-            type = ResourceType.TOOL,
-            badgeText = "Planner",
-            iconRes = R.drawable.ic_calculate
-        )
-    )
+    fun getDepartments(context: Context): List<String> {
+        if (cachedDepartments != null) return cachedDepartments!!
+        val allHandouts = getHandouts(context)
+        val depts = allHandouts.map { it.department }.distinct().sorted()
+        val result = listOf("All") + depts
+        cachedDepartments = result
+        return result
+    }
 
-    val allResources: List<ResourceItem> = handouts + links + tools
+    fun getHandoutsByDepartment(context: Context, department: String): List<HandoutCourse> {
+        val all = getHandouts(context)
+        return if (department.equals("All", ignoreCase = true)) {
+            all
+        } else {
+            all.filter { it.department.equals(department, ignoreCase = true) }
+        }
+    }
 
-    fun searchResources(query: String): List<ResourceItem> {
+    fun searchHandouts(context: Context, query: String): List<HandoutCourse> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return emptyList()
-        return allResources.filter {
+        return getHandouts(context).filter {
+            it.courseCode.lowercase().contains(q) ||
             it.title.lowercase().contains(q) ||
-            it.description.lowercase().contains(q) ||
-            it.badgeText?.lowercase()?.contains(q) == true
+            it.department.lowercase().contains(q)
+        }
+    }
+
+    fun searchLinks(query: String): List<ResourceLink> {
+        val q = query.trim().lowercase()
+        if (q.isEmpty()) return emptyList()
+        return links.filter { it.title.lowercase().contains(q) }
+    }
+
+    fun openHandoutInBrowser(context: Context, courseCode: String) {
+        val query = "$courseCode VU handouts filetype:pdf"
+        val url = "https://www.google.com/search?q=" + Uri.encode(query)
+        openUrlInBrowser(context, url)
+    }
+
+    fun openUrlInBrowser(context: Context, url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun loadHandoutsFromAssets(context: Context): List<HandoutCourse> {
+        val courses = try {
+            context.assets.open("courses.json").use { inputStream ->
+                InputStreamReader(inputStream).use { reader ->
+                    val type = object : TypeToken<List<Course>>() {}.type
+                    Gson().fromJson<List<Course>>(reader, type) ?: emptyList()
+                }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val codeRegex = Regex("^([A-Za-z]{2,5}\\d{3,4})")
+        val cleanTitleRegex = Regex("^([A-Za-z]{2,5}\\d{3,4})\\s*[-–—:]?\\s*")
+
+        val result = mutableListOf<HandoutCourse>()
+        val seenCodes = mutableSetOf<String>()
+
+        for (c in courses) {
+            val code = when {
+                !c.courseCode.isNullOrBlank() -> c.courseCode.trim()
+                codeRegex.containsMatchIn(c.title) -> codeRegex.find(c.title)?.value ?: ""
+                else -> ""
+            }
+
+            if (code.isNotEmpty() && !seenCodes.contains(code)) {
+                seenCodes.add(code)
+                val cleanTitle = cleanTitleRegex.replace(c.title, "").trim().ifEmpty { c.title }
+                val normalizedDept = normalizeDepartment(c.department)
+                result.add(
+                    HandoutCourse(
+                        courseCode = code,
+                        title = cleanTitle,
+                        department = normalizedDept
+                    )
+                )
+            }
+        }
+
+        return result.sortedBy { it.courseCode }
+    }
+
+    private fun normalizeDepartment(dept: String): String {
+        val trimmed = dept.trim()
+        return when {
+            trimmed.contains("BIF", ignoreCase = true) -> "Bioinformatics"
+            trimmed.contains("ECE", ignoreCase = true) -> "Electrical Engineering"
+            trimmed.contains("EDUA", ignoreCase = true) -> "Education"
+            trimmed.contains("ETH", ignoreCase = true) -> "Ethics"
+            trimmed.contains("GSC", ignoreCase = true) -> "General Science"
+            trimmed.contains("MB Department", ignoreCase = true) -> "Molecular Biology"
+            trimmed.contains("MCD", ignoreCase = true) -> "Mass Communication"
+            trimmed.contains("MGTE", ignoreCase = true) -> "Management"
+            trimmed.contains("MIC", ignoreCase = true) -> "Microbiology"
+            trimmed.contains("PSC", ignoreCase = true) -> "Pakistan Studies"
+            trimmed.contains("PSYP", ignoreCase = true) -> "Psychology"
+            trimmed.equals("GEN Department", ignoreCase = true) ||
+            trimmed.equals("General / Other", ignoreCase = true) ||
+            trimmed.equals("VU Department", ignoreCase = true) -> "General"
+            else -> trimmed
         }
     }
 }
