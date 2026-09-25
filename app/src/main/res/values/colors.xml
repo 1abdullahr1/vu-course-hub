@@ -44,7 +44,7 @@
     <color name="accent_gold">#F9A825</color>
     <color name="card_stroke">#15000000</color>
     <color name="shortcut_color">#0058CB</color>
-    <color name="ic_launcher_background">#0058CB</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
     <color name="nav_active_indicator">#A6C8FF</color>
 
 </resources>
