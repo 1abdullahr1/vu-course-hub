@@ -89,6 +89,12 @@ class SavedFragment : Fragment() {
     }
 
     private fun setupListeners() {
+        binding.btnResources.setOnClickListener {
+            val intent = Intent(requireContext(), com.vu.lecturehub.ui.resources.ResourcesActivity::class.java)
+            startActivity(intent)
+            activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+
         binding.btnSettings.setOnClickListener {
             SettingsBottomSheetDialogFragment.newInstance()
                 .show(childFragmentManager, SettingsBottomSheetDialogFragment.TAG)

@@ -43,6 +43,12 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="false" />
 
+        <!-- Resources Activity -->
+        <activity
+            android:name=".ui.resources.ResourcesActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 
 </manifest>

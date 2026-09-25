@@ -52,4 +52,19 @@
     <string name="clear_history_title">Clear Watch History</string>
     <string name="clear_history_message">Are you sure you want to clear your recently watched lectures history?</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Resources Screen Strings -->
+    <string name="resources">Resources</string>
+    <string name="tab_handouts">Handouts</string>
+    <string name="tab_links">Links</string>
+    <string name="tab_tools">Tools</string>
+    <string name="search_resources_hint">Search handouts, links, tools...</string>
+    <string name="no_resources_found">No resources found</string>
+    <string name="no_resources_found_desc">Try searching with a different keyword.</string>
+    <string name="open_link">Open Link</string>
+    <string name="download">Download</string>
+    <string name="open_tool">Open Tool</string>
+    <string name="tool_placeholder_title">Tool Information</string>
+    <string name="tool_placeholder_desc">This educational tool will be fully interactive in the upcoming update.</string>
+    <string name="close">Close</string>
 </resources>

@@ -25,6 +25,24 @@
             android:textSize="24sp"
             android:textStyle="bold" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_resources"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginEnd="8dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="12dp"
+            android:text="@string/resources"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:cornerRadius="18dp"
+            app:icon="@drawable/ic_school"
+            app:iconSize="16dp"
+            app:iconTint="?attr/colorPrimary" />
+
         <ImageView
             android:id="@+id/btn_settings"
             android:layout_width="40dp"
