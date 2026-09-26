@@ -89,11 +89,12 @@ pub fn render_saved(
                             .text_sm()
                             .cursor_pointer()
                             .hover(|s| s.opacity(0.9))
-                            .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                 this.set_tab(Tab::Courses, window, cx);
                             }))
                             .child("Explore Courses")
                     )
+                    .into_any_element()
             } else {
                 // Grid of Saved Courses
                 div()
@@ -148,7 +149,7 @@ pub fn render_saved(
                                                     .text_color(theme.accent)
                                                     .text_xs()
                                                     .font_weight(FontWeight::BOLD)
-                                                    .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
                                                         this.toggle_bookmark(code_for_bookmark.clone(), window, cx);
                                                     }))
                                                     .child("Remove")
@@ -193,13 +194,14 @@ pub fn render_saved(
                                             .text_xs()
                                             .cursor_pointer()
                                             .hover(|s| s.opacity(0.9))
-                                            .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
                                                 this.select_course(course_clone.clone(), window, cx);
                                             }))
                                             .child("Watch")
                                     )
                             )
                     }))
+                    .into_any_element()
             }
         )
 }

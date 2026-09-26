@@ -105,7 +105,7 @@ pub fn render_sidebar(
                         .rounded_md()
                         .bg(theme.surface_hover)
                         .cursor_pointer()
-                        .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                        .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                             this.toggle_theme(window, cx);
                         }))
                         .child(
@@ -165,7 +165,7 @@ fn nav_item(
         .bg(bg)
         .cursor_pointer()
         .hover(|s| s.bg(theme.surface_hover))
-        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+        .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
             this.set_tab(tab, window, cx);
         }))
         .child(

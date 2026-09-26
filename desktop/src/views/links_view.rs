@@ -109,7 +109,7 @@ pub fn render_links(
                                         .text_xs()
                                         .cursor_pointer()
                                         .hover(|s| s.opacity(0.9))
-                                        .on_click(move |_event, _window, _cx| {
+                                        .on_mouse_down(gpui::MouseButton::Left, move |_event, _window, _cx| {
                                             let _ = open::that(&url);
                                         })
                                         .child("Open Portal")

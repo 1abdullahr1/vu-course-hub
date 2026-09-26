@@ -63,7 +63,7 @@ pub fn render_player(
                                     .text_xl()
                                     .cursor_pointer()
                                     .hover(|s| s.opacity(0.85))
-                                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                         this.toggle_play(window, cx);
                                     }))
                                     .child(if state.is_playing { "Pause" } else { "Play" })
@@ -103,7 +103,7 @@ pub fn render_player(
                                             .text_xs()
                                             .cursor_pointer()
                                             .hover(|s| s.opacity(0.9))
-                                            .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                                 this.toggle_play(window, cx);
                                             }))
                                             .child(if state.is_playing { "Pause" } else { "Play" })
@@ -139,7 +139,7 @@ pub fn render_player(
                                     .text_xs()
                                     .cursor_pointer()
                                     .hover(|s| s.bg(theme.surface_hover))
-                                    .on_click(move |_event, _window, _cx| {
+                                    .on_mouse_down(gpui::MouseButton::Left, move |_event, _window, _cx| {
                                         let _ = open::that(&yt_url);
                                     })
                                     .child("Open in YouTube")
@@ -238,7 +238,7 @@ pub fn render_player(
                                     .border_color(if is_active { primary_color } else { border_color })
                                     .cursor_pointer()
                                     .hover(|s| s.bg(theme.surface_hover))
-                                    .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
                                         this.select_lecture(lec_clone.clone(), window, cx);
                                     }))
                                     .child(
@@ -277,6 +277,7 @@ pub fn render_player(
                             }))
                     )
             )
+            .into_any_element()
     } else {
         // No Course Selected Empty State
         div()
@@ -313,11 +314,12 @@ pub fn render_player(
                     .text_sm()
                     .cursor_pointer()
                     .hover(|s| s.opacity(0.9))
-                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                         this.set_tab(Tab::Courses, window, cx);
                     }))
                     .child("Browse Courses")
             )
+            .into_any_element()
     }
 }
 
@@ -338,7 +340,7 @@ fn speed_button(
         .font_weight(FontWeight::BOLD)
         .cursor_pointer()
         .hover(|s| s.opacity(0.85))
-        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+        .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
             this.set_speed(speed, window, cx);
         }))
         .child(format!("{}x", speed))

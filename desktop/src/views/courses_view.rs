@@ -86,7 +86,7 @@ pub fn render_courses(
                         .font_weight(if is_active { FontWeight::BOLD } else { FontWeight::NORMAL })
                         .cursor_pointer()
                         .hover(|s| s.opacity(0.85))
-                        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                        .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
                             this.select_dept(dept_name.clone(), window, cx);
                         }))
                         .child(dept.clone())
@@ -148,7 +148,7 @@ pub fn render_courses(
                                                 .text_color(if is_saved { theme.accent } else { theme.text_muted })
                                                 .text_xs()
                                                 .font_weight(FontWeight::BOLD)
-                                                .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                                .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
                                                     this.toggle_bookmark(code_for_bookmark.clone(), window, cx);
                                                 }))
                                                 .child(if is_saved { "Saved" } else { "Save" })
@@ -193,7 +193,7 @@ pub fn render_courses(
                                         .text_xs()
                                         .cursor_pointer()
                                         .hover(|s| s.opacity(0.9))
-                                        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                        .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
                                             this.select_course(course_clone.clone(), window, cx);
                                         }))
                                         .child("Watch")

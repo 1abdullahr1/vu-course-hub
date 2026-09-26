@@ -116,7 +116,7 @@ pub fn render_home(
                                     .text_sm()
                                     .cursor_pointer()
                                     .hover(|s| s.opacity(0.9))
-                                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                         this.set_tab(Tab::Player, window, cx);
                                     }))
                                     .child("Resume Watching")
@@ -132,12 +132,13 @@ pub fn render_home(
                                     .text_sm()
                                     .cursor_pointer()
                                     .hover(|s| s.bg(theme.surface_hover))
-                                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                         this.set_tab(Tab::Courses, window, cx);
                                     }))
                                     .child("Browse All Courses")
                             )
                     )
+                    .into_any_element()
             } else {
                 // Empty State with Call to Action
                 div()
@@ -178,11 +179,12 @@ pub fn render_home(
                             .text_sm()
                             .cursor_pointer()
                             .hover(|s| s.opacity(0.9))
-                            .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                 this.set_tab(Tab::Courses, window, cx);
                             }))
                             .child("Explore 190+ Courses")
                     )
+                    .into_any_element()
             }
         )
         .child(
@@ -227,7 +229,7 @@ fn dept_card(
         .border_color(theme.border)
         .cursor_pointer()
         .hover(|s| s.bg(theme.surface_hover))
-        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+        .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
             this.select_dept(name.to_string(), window, cx);
             this.set_tab(Tab::Courses, window, cx);
         }))
