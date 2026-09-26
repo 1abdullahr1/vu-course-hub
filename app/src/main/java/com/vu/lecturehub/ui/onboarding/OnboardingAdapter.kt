@@ -31,10 +31,7 @@ class OnboardingAdapter(
         fun bind(slide: OnboardingSlide) {
             binding.tvTitle.text = slide.title
             binding.tvDescription.text = slide.description
-            binding.ivMainIcon.setImageResource(slide.mainIconRes)
-            binding.ivBadge1.setImageResource(slide.badge1IconRes)
-            binding.ivBadge2.setImageResource(slide.badge2IconRes)
-            binding.ivBadge3.setImageResource(slide.badge3IconRes)
+            binding.ivIllustration.setImageResource(slide.illustrationRes)
         }
     }
 }

@@ -12,6 +12,7 @@ import com.vu.lecturehub.MainActivity
 import com.vu.lecturehub.R
 import com.vu.lecturehub.databinding.ActivityOnboardingBinding
 import com.vu.lecturehub.util.OnboardingManager
+import com.vu.lecturehub.util.ThemeManager
 
 class OnboardingActivity : AppCompatActivity() {
 
@@ -20,6 +21,7 @@ class OnboardingActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applySavedTheme(this)
         binding = ActivityOnboardingBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -46,26 +48,17 @@ class OnboardingActivity : AppCompatActivity() {
             OnboardingSlide(
                 title = getString(R.string.onboarding_title_1),
                 description = getString(R.string.onboarding_desc_1),
-                mainIconRes = R.drawable.ic_onboarding_shield,
-                badge1IconRes = R.drawable.ic_onboarding_check,
-                badge2IconRes = R.drawable.ic_onboarding_lock,
-                badge3IconRes = R.drawable.ic_bell
+                illustrationRes = R.drawable.il_onboarding_1
             ),
             OnboardingSlide(
                 title = getString(R.string.onboarding_title_2),
                 description = getString(R.string.onboarding_desc_2),
-                mainIconRes = R.drawable.ic_onboarding_grad,
-                badge1IconRes = R.drawable.ic_play,
-                badge2IconRes = R.drawable.ic_book,
-                badge3IconRes = R.drawable.ic_library
+                illustrationRes = R.drawable.il_onboarding_2
             ),
             OnboardingSlide(
                 title = getString(R.string.onboarding_title_3),
                 description = getString(R.string.onboarding_desc_3),
-                mainIconRes = R.drawable.ic_onboarding_history,
-                badge1IconRes = R.drawable.ic_bookmark,
-                badge2IconRes = R.drawable.ic_trending_up,
-                badge3IconRes = R.drawable.ic_play
+                illustrationRes = R.drawable.il_onboarding_3
             )
         )
 

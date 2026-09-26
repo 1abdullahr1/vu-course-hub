@@ -7,88 +7,23 @@
     android:orientation="vertical">
 
     <!-- Upper Card Container -->
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="310dp"
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="8dp"
         android:background="@drawable/bg_onboarding_card"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:padding="20dp">
 
-        <!-- Center Primary Circular Emblem -->
-        <FrameLayout
-            android:layout_width="104dp"
-            android:layout_height="104dp"
-            android:background="@drawable/bg_onboarding_circle">
-
-            <ImageView
-                android:id="@+id/iv_main_icon"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_gravity="center"
-                android:contentDescription="@null"
-                android:tint="#FFFFFF"
-                tools:src="@drawable/ic_onboarding_shield" />
-        </FrameLayout>
-
-        <!-- Floating Badges Row -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <FrameLayout
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginHorizontal="6dp"
-                android:background="@drawable/bg_onboarding_badge">
-
-                <ImageView
-                    android:id="@+id/iv_badge_1"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:tint="@color/primary"
-                    tools:src="@drawable/ic_onboarding_check" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginHorizontal="6dp"
-                android:background="@drawable/bg_onboarding_badge">
-
-                <ImageView
-                    android:id="@+id/iv_badge_2"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:tint="@color/primary"
-                    tools:src="@drawable/ic_onboarding_lock" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginHorizontal="6dp"
-                android:background="@drawable/bg_onboarding_badge">
-
-                <ImageView
-                    android:id="@+id/iv_badge_3"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:tint="@color/primary"
-                    tools:src="@drawable/ic_bell" />
-            </FrameLayout>
-        </LinearLayout>
-    </LinearLayout>
+        <ImageView
+            android:id="@+id/iv_illustration"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter"
+            tools:src="@drawable/il_onboarding_1" />
+    </FrameLayout>
 
     <!-- Slide Headline -->
     <TextView

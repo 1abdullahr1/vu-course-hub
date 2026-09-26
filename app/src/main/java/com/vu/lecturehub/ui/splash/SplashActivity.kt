@@ -14,6 +14,7 @@ import com.vu.lecturehub.MainActivity
 import com.vu.lecturehub.databinding.ActivitySplashBinding
 import com.vu.lecturehub.ui.onboarding.OnboardingActivity
 import com.vu.lecturehub.util.OnboardingManager
+import com.vu.lecturehub.util.ThemeManager
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
@@ -24,6 +25,7 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.applySavedTheme(this)
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
