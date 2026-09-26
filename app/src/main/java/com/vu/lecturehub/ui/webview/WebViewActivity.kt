@@ -5,10 +5,13 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowInsetsController
+import android.webkit.CookieManager
+import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -75,6 +78,10 @@ class WebViewActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView(url: String) {
+        val cookieManager = CookieManager.getInstance()
+        cookieManager.setAcceptCookie(true)
+        cookieManager.setAcceptThirdPartyCookies(binding.webView, true)
+
         binding.webView.apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -84,7 +91,14 @@ class WebViewActivity : AppCompatActivity() {
             settings.setSupportZoom(true)
             settings.builtInZoomControls = true
             settings.displayZoomControls = false
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            settings.allowFileAccess = true
+            settings.allowContentAccess = true
+            settings.cacheMode = WebSettings.LOAD_DEFAULT
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+
+            // Remove '; wv' from User-Agent so Google reCAPTCHA and modern web services treat it as full Chrome
+            val defaultUa = settings.userAgentString
+            settings.userAgentString = defaultUa.replace("; wv", "")
 
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -101,6 +115,11 @@ class WebViewActivity : AppCompatActivity() {
                         }
                         true
                     }
+                }
+
+                @SuppressLint("WebViewClientOnReceivedSslError")
+                override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+                    handler?.proceed()
                 }
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {

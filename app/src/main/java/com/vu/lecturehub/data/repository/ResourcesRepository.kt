@@ -75,7 +75,7 @@ object ResourcesRepository {
             "$courseCode VU handouts filetype:pdf"
         }
         val url = "https://www.google.com/search?q=" + Uri.encode(query)
-        openUrlInApp(context, url, "$courseCode Handouts")
+        openUrlInBrowser(context, url)
     }
 
     fun openUrlInApp(context: Context, url: String, title: String? = null) {
