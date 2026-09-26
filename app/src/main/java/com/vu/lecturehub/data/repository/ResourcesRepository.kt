@@ -75,7 +75,21 @@ object ResourcesRepository {
             "$courseCode VU handouts filetype:pdf"
         }
         val url = "https://www.google.com/search?q=" + Uri.encode(query)
-        openUrlInBrowser(context, url)
+        openUrlInApp(context, url, "$courseCode Handouts")
+    }
+
+    fun openUrlInApp(context: Context, url: String, title: String? = null) {
+        try {
+            val intent = Intent(context, com.vu.lecturehub.ui.webview.WebViewActivity::class.java).apply {
+                putExtra(com.vu.lecturehub.ui.webview.WebViewActivity.EXTRA_URL, url)
+                putExtra(com.vu.lecturehub.ui.webview.WebViewActivity.EXTRA_TITLE, title)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            openUrlInBrowser(context, url)
+        }
     }
 
     fun openUrlInBrowser(context: Context, url: String) {

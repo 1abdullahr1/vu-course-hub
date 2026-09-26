@@ -61,6 +61,12 @@
             android:name=".ui.onboarding.OnboardingActivity"
             android:exported="false" />
 
+        <!-- In-App WebView Activity -->
+        <activity
+            android:name=".ui.webview.WebViewActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false" />
+
     </application>
 
 </manifest>

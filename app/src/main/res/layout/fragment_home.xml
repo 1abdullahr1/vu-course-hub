@@ -36,11 +36,17 @@
                     android:textStyle="bold" />
 
                 <LinearLayout
+                    android:id="@+id/btn_courses_dropdown"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:paddingVertical="4dp"
+                    android:paddingEnd="8dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -64,6 +70,8 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
                 android:padding="8dp"
                 android:src="@drawable/ic_bell"
                 app:tint="?attr/colorOnSurface" />

@@ -64,6 +64,16 @@ class HomeFragment : Fragment() {
         binding.btnViewAllCourses.setOnClickListener {
             (activity as? MainActivity)?.switchTab(R.id.nav_saved)
         }
+
+        // "Courses" dropdown selector -> shows Coming Soon
+        binding.btnCoursesDropdown.setOnClickListener {
+            android.widget.Toast.makeText(context, "Coming Soon", android.widget.Toast.LENGTH_SHORT).show()
+        }
+
+        // Notification icon -> shows Coming Soon
+        binding.btnNotifications.setOnClickListener {
+            android.widget.Toast.makeText(context, "Coming Soon", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun observeData() {

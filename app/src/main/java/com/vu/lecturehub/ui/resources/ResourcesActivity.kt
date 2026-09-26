@@ -86,7 +86,7 @@ class ResourcesActivity : AppCompatActivity() {
         }
 
         searchLinkAdapter = LinkAdapter(emptyList()) { item ->
-            ResourcesRepository.openUrlInBrowser(this@ResourcesActivity, item.url)
+            ResourcesRepository.openUrlInApp(this@ResourcesActivity, item.url, item.title)
         }
 
         val concatAdapter = ConcatAdapter(searchHandoutAdapter, searchLinkAdapter)

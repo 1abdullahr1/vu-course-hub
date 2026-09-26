@@ -28,7 +28,7 @@ class LinksFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val adapter = LinkAdapter(ResourcesRepository.links) { item ->
-            ResourcesRepository.openUrlInBrowser(requireContext(), item.url)
+            ResourcesRepository.openUrlInApp(requireContext(), item.url, item.title)
         }
 
         binding.rvLinks.apply {
