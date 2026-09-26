@@ -3,6 +3,9 @@ name: Build Android APK
 on:
   push:
     branches: [ "**" ]
+    paths-ignore:
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
   workflow_dispatch:
 
 jobs:
