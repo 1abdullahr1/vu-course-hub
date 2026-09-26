@@ -1,13 +1,13 @@
 use gpui::prelude::*;
-use gpui::{Context, Window, div, px, rgb};
+use gpui::{Context, FontWeight, Window, div, px};
+use crate::RootView;
 use crate::state::{AppState, Tab};
 use crate::theme::Theme;
 
-pub fn render_home<V: 'static>(
+pub fn render_home(
     state: &AppState,
     theme: &Theme,
-    on_tab_change: impl Fn(Tab, &mut Window, &mut Context<V>) + 'static + Copy,
-    on_select_dept: impl Fn(String, &mut Window, &mut Context<V>) + 'static + Copy,
+    cx: &Context<RootView>,
 ) -> impl IntoElement {
     let text_primary = theme.text_primary;
     let text_secondary = theme.text_secondary;
@@ -31,7 +31,7 @@ pub fn render_home<V: 'static>(
                 .child(
                     div()
                         .text_color(text_primary)
-                        .font_bold()
+                        .font_weight(FontWeight::BOLD)
                         .text_2xl()
                         .child("Welcome to VU Course Hub")
                 )
@@ -71,14 +71,14 @@ pub fn render_home<V: 'static>(
                                             .rounded_md()
                                             .bg(theme.chip_bg)
                                             .text_color(primary_color)
-                                            .font_bold()
+                                            .font_weight(FontWeight::BOLD)
                                             .text_sm()
                                             .child(course.courseCode.clone())
                                     )
                                     .child(
                                         div()
                                             .text_color(text_primary)
-                                            .font_bold()
+                                            .font_weight(FontWeight::BOLD)
                                             .text_lg()
                                             .child(course.clean_title())
                                     )
@@ -111,14 +111,14 @@ pub fn render_home<V: 'static>(
                                     .py_2()
                                     .rounded_lg()
                                     .bg(primary_color)
-                                    .text_color(rgb(0xFFFFFF))
-                                    .font_bold()
+                                    .text_color(theme.white)
+                                    .font_weight(FontWeight::BOLD)
                                     .text_sm()
                                     .cursor_pointer()
                                     .hover(|s| s.opacity(0.9))
-                                    .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                        on_tab_change(Tab::Player, window, cx);
-                                    })
+                                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                        this.set_tab(Tab::Player, window, cx);
+                                    }))
                                     .child("Resume Watching")
                             )
                             .child(
@@ -132,9 +132,9 @@ pub fn render_home<V: 'static>(
                                     .text_sm()
                                     .cursor_pointer()
                                     .hover(|s| s.bg(theme.surface_hover))
-                                    .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                        on_tab_change(Tab::Courses, window, cx);
-                                    })
+                                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                        this.set_tab(Tab::Courses, window, cx);
+                                    }))
                                     .child("Browse All Courses")
                             )
                     )
@@ -154,7 +154,7 @@ pub fn render_home<V: 'static>(
                     .child(
                         div()
                             .text_color(text_primary)
-                            .font_bold()
+                            .font_weight(FontWeight::BOLD)
                             .text_xl()
                             .child("Start Your Learning Journey")
                     )
@@ -173,14 +173,14 @@ pub fn render_home<V: 'static>(
                             .py_3()
                             .rounded_full()
                             .bg(primary_color)
-                            .text_color(rgb(0xFFFFFF))
-                            .font_bold()
+                            .text_color(theme.white)
+                            .font_weight(FontWeight::BOLD)
                             .text_sm()
                             .cursor_pointer()
                             .hover(|s| s.opacity(0.9))
-                            .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                on_tab_change(Tab::Courses, window, cx);
-                            })
+                            .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                this.set_tab(Tab::Courses, window, cx);
+                            }))
                             .child("Explore 190+ Courses")
                     )
             }
@@ -194,7 +194,7 @@ pub fn render_home<V: 'static>(
                 .child(
                     div()
                         .text_color(text_primary)
-                        .font_bold()
+                        .font_weight(FontWeight::BOLD)
                         .text_base()
                         .child("Browse by Faculty")
                 )
@@ -203,21 +203,20 @@ pub fn render_home<V: 'static>(
                         .flex()
                         .flex_wrap()
                         .gap_3()
-                        .child(dept_card("Computer Science", theme, on_tab_change, on_select_dept))
-                        .child(dept_card("Management", theme, on_tab_change, on_select_dept))
-                        .child(dept_card("Accounting", theme, on_tab_change, on_select_dept))
-                        .child(dept_card("Mathematics", theme, on_tab_change, on_select_dept))
-                        .child(dept_card("Economics", theme, on_tab_change, on_select_dept))
-                        .child(dept_card("Bioinformatics", theme, on_tab_change, on_select_dept))
+                        .child(dept_card("Computer Science", theme, cx))
+                        .child(dept_card("Management", theme, cx))
+                        .child(dept_card("Accounting", theme, cx))
+                        .child(dept_card("Mathematics", theme, cx))
+                        .child(dept_card("Economics", theme, cx))
+                        .child(dept_card("Bioinformatics", theme, cx))
                 )
         )
 }
 
-fn dept_card<V: 'static>(
+fn dept_card(
     name: &'static str,
     theme: &Theme,
-    on_tab_change: impl Fn(Tab, &mut Window, &mut Context<V>) + 'static + Copy,
-    on_select_dept: impl Fn(String, &mut Window, &mut Context<V>) + 'static + Copy,
+    cx: &Context<RootView>,
 ) -> impl IntoElement {
     div()
         .px_4()
@@ -228,14 +227,14 @@ fn dept_card<V: 'static>(
         .border_color(theme.border)
         .cursor_pointer()
         .hover(|s| s.bg(theme.surface_hover))
-        .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-            on_select_dept(name.to_string(), window, cx);
-            on_tab_change(Tab::Courses, window, cx);
-        })
+        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+            this.select_dept(name.to_string(), window, cx);
+            this.set_tab(Tab::Courses, window, cx);
+        }))
         .child(
             div()
                 .text_color(theme.text_primary)
-                .font_medium()
+                .font_weight(FontWeight::MEDIUM)
                 .text_sm()
                 .child(name)
         )

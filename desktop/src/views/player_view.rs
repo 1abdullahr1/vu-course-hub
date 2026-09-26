@@ -1,16 +1,13 @@
 use gpui::prelude::*;
-use gpui::{Context, Window, div, px, rgb};
-use crate::models::{Course, Lecture};
+use gpui::{Context, FontWeight, Window, div, px};
+use crate::RootView;
 use crate::state::{AppState, Tab};
 use crate::theme::Theme;
 
-pub fn render_player<V: 'static>(
+pub fn render_player(
     state: &AppState,
     theme: &Theme,
-    on_tab_change: impl Fn(Tab, &mut Window, &mut Context<V>) + 'static + Copy,
-    on_select_lecture: impl Fn(Lecture, &mut Window, &mut Context<V>) + 'static + Copy,
-    on_toggle_play: impl Fn(&mut Window, &mut Context<V>) + 'static + Copy,
-    on_set_speed: impl Fn(f32, &mut Window, &mut Context<V>) + 'static + Copy,
+    cx: &Context<RootView>,
 ) -> impl IntoElement {
     let text_primary = theme.text_primary;
     let text_secondary = theme.text_secondary;
@@ -46,7 +43,7 @@ pub fn render_player<V: 'static>(
                             .w_full()
                             .h(px(416.0))
                             .rounded_xl()
-                            .bg(rgb(0x000000))
+                            .bg(theme.black)
                             .flex()
                             .flex_col()
                             .items_center()
@@ -61,20 +58,20 @@ pub fn render_player<V: 'static>(
                                     .flex()
                                     .items_center()
                                     .justify_center()
-                                    .text_color(rgb(0xFFFFFF))
-                                    .font_bold()
+                                    .text_color(theme.white)
+                                    .font_weight(FontWeight::BOLD)
                                     .text_xl()
                                     .cursor_pointer()
                                     .hover(|s| s.opacity(0.85))
-                                    .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                        on_toggle_play(window, cx);
-                                    })
+                                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                        this.toggle_play(window, cx);
+                                    }))
                                     .child(if state.is_playing { "Pause" } else { "Play" })
                             )
                             .child(
                                 div()
-                                    .text_color(rgb(0xFFFFFF))
-                                    .font_bold()
+                                    .text_color(theme.white)
+                                    .font_weight(FontWeight::BOLD)
                                     .text_base()
                                     .child(active_lecture.title.clone())
                             )
@@ -101,14 +98,14 @@ pub fn render_player<V: 'static>(
                                             .py_2()
                                             .rounded_lg()
                                             .bg(primary_color)
-                                            .text_color(rgb(0xFFFFFF))
-                                            .font_bold()
+                                            .text_color(theme.white)
+                                            .font_weight(FontWeight::BOLD)
                                             .text_xs()
                                             .cursor_pointer()
                                             .hover(|s| s.opacity(0.9))
-                                            .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                                on_toggle_play(window, cx);
-                                            })
+                                            .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                                                this.toggle_play(window, cx);
+                                            }))
                                             .child(if state.is_playing { "Pause" } else { "Play" })
                                     )
                                     .child(
@@ -124,10 +121,10 @@ pub fn render_player<V: 'static>(
                                     .flex()
                                     .items_center()
                                     .gap_2()
-                                    .child(speed_button(1.0, state.playback_speed, theme, on_set_speed))
-                                    .child(speed_button(1.25, state.playback_speed, theme, on_set_speed))
-                                    .child(speed_button(1.5, state.playback_speed, theme, on_set_speed))
-                                    .child(speed_button(2.0, state.playback_speed, theme, on_set_speed))
+                                    .child(speed_button(1.0, state.playback_speed, theme, cx))
+                                    .child(speed_button(1.25, state.playback_speed, theme, cx))
+                                    .child(speed_button(1.5, state.playback_speed, theme, cx))
+                                    .child(speed_button(2.0, state.playback_speed, theme, cx))
                             )
                             .child(
                                 // Open External YouTube Button
@@ -138,11 +135,11 @@ pub fn render_player<V: 'static>(
                                     .border_1()
                                     .border_color(border_color)
                                     .text_color(text_primary)
-                                    .font_bold()
+                                    .font_weight(FontWeight::BOLD)
                                     .text_xs()
                                     .cursor_pointer()
                                     .hover(|s| s.bg(theme.surface_hover))
-                                    .on_mouse_down(gpui::MouseButton::Left, move |_event, _window, _cx| {
+                                    .on_click(move |_event, _window, _cx| {
                                         let _ = open::that(&yt_url);
                                     })
                                     .child("Open in YouTube")
@@ -171,7 +168,7 @@ pub fn render_player<V: 'static>(
                                             .rounded_md()
                                             .bg(theme.chip_bg)
                                             .text_color(primary_color)
-                                            .font_bold()
+                                            .font_weight(FontWeight::BOLD)
                                             .text_xs()
                                             .child(course.courseCode.clone())
                                     )
@@ -185,7 +182,7 @@ pub fn render_player<V: 'static>(
                             .child(
                                 div()
                                     .text_color(text_primary)
-                                    .font_bold()
+                                    .font_weight(FontWeight::BOLD)
                                     .text_lg()
                                     .child(course.clean_title())
                             )
@@ -208,7 +205,7 @@ pub fn render_player<V: 'static>(
                             .child(
                                 div()
                                     .text_color(text_primary)
-                                    .font_bold()
+                                    .font_weight(FontWeight::BOLD)
                                     .text_base()
                                     .child("Course Playlist")
                             )
@@ -221,6 +218,7 @@ pub fn render_player<V: 'static>(
                     )
                     .child(
                         div()
+                            .id("playlist_scroll")
                             .flex()
                             .flex_col()
                             .gap_2()
@@ -240,9 +238,9 @@ pub fn render_player<V: 'static>(
                                     .border_color(if is_active { primary_color } else { border_color })
                                     .cursor_pointer()
                                     .hover(|s| s.bg(theme.surface_hover))
-                                    .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                        on_select_lecture(lec_clone.clone(), window, cx);
-                                    })
+                                    .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                        this.select_lecture(lec_clone.clone(), window, cx);
+                                    }))
                                     .child(
                                         div()
                                             .flex()
@@ -254,18 +252,18 @@ pub fn render_player<V: 'static>(
                                                     .h(px(28.0))
                                                     .rounded_md()
                                                     .bg(if is_active { primary_color } else { theme.surface_hover })
-                                                    .text_color(if is_active { rgb(0xFFFFFF) } else { text_secondary })
+                                                    .text_color(if is_active { theme.white } else { text_secondary })
                                                     .flex()
                                                     .items_center()
                                                     .justify_center()
                                                     .text_xs()
-                                                    .font_bold()
+                                                    .font_weight(FontWeight::BOLD)
                                                     .child(format!("{:02}", lec.lecture_number))
                                             )
                                             .child(
                                                 div()
                                                     .text_color(if is_active { primary_color } else { text_primary })
-                                                    .font_medium()
+                                                    .font_weight(FontWeight::MEDIUM)
                                                     .text_sm()
                                                     .child(lec.title.clone())
                                             )
@@ -293,7 +291,7 @@ pub fn render_player<V: 'static>(
             .child(
                 div()
                     .text_color(text_primary)
-                    .font_bold()
+                    .font_weight(FontWeight::BOLD)
                     .text_xl()
                     .child("No Course Selected")
             )
@@ -310,24 +308,24 @@ pub fn render_player<V: 'static>(
                     .py_3()
                     .rounded_full()
                     .bg(primary_color)
-                    .text_color(rgb(0xFFFFFF))
-                    .font_bold()
+                    .text_color(theme.white)
+                    .font_weight(FontWeight::BOLD)
                     .text_sm()
                     .cursor_pointer()
                     .hover(|s| s.opacity(0.9))
-                    .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                        on_tab_change(Tab::Courses, window, cx);
-                    })
+                    .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                        this.set_tab(Tab::Courses, window, cx);
+                    }))
                     .child("Browse Courses")
             )
     }
 }
 
-fn speed_button<V: 'static>(
+fn speed_button(
     speed: f32,
     current_speed: f32,
     theme: &Theme,
-    on_set_speed: impl Fn(f32, &mut Window, &mut Context<V>) + 'static + Copy,
+    cx: &Context<RootView>,
 ) -> impl IntoElement {
     let is_selected = (current_speed - speed).abs() < 0.01;
     div()
@@ -335,13 +333,13 @@ fn speed_button<V: 'static>(
         .py_1()
         .rounded_md()
         .bg(if is_selected { theme.primary } else { theme.surface_hover })
-        .text_color(if is_selected { rgb(0xFFFFFF) } else { theme.text_secondary })
+        .text_color(if is_selected { theme.white } else { theme.text_secondary })
         .text_xs()
-        .font_bold()
+        .font_weight(FontWeight::BOLD)
         .cursor_pointer()
         .hover(|s| s.opacity(0.85))
-        .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-            on_set_speed(speed, window, cx);
-        })
+        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+            this.set_speed(speed, window, cx);
+        }))
         .child(format!("{}x", speed))
 }

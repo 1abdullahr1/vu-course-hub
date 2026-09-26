@@ -9,7 +9,7 @@ mod views;
 use gpui::prelude::*;
 use gpui::{
     App, Bounds, Context, Render, TitlebarOptions, Window, WindowBounds, WindowOptions,
-    point, px, size,
+    div, point, px, size,
 };
 use crate::data::CourseData;
 use crate::models::{Course, Lecture};
@@ -19,8 +19,8 @@ use crate::views::{
 };
 
 pub struct RootView {
-    state: AppState,
-    data: CourseData,
+    pub state: AppState,
+    pub data: CourseData,
 }
 
 impl RootView {
@@ -87,10 +87,9 @@ impl Render for RootView {
             .h_full()
             .bg(theme.background)
             .child(sidebar::render_sidebar(
-                self.state.current_tab,
+                &self.state,
                 &theme,
-                |tab, window, cx| cx.update(|view: &mut RootView, cx| view.set_tab(tab, window, cx)),
-                |window, cx| cx.update(|view: &mut RootView, cx| view.toggle_theme(window, cx)),
+                cx,
             ))
             .child(
                 div()
@@ -100,33 +99,25 @@ impl Render for RootView {
                         Tab::Home => home_view::render_home(
                             &self.state,
                             &theme,
-                            |tab, window, cx| cx.update(|view: &mut RootView, cx| view.set_tab(tab, window, cx)),
-                            |dept, window, cx| cx.update(|view: &mut RootView, cx| view.select_dept(dept, window, cx)),
+                            cx,
                         ).into_any_element(),
                         Tab::Courses => courses_view::render_courses(
                             &self.state,
                             &self.data.courses,
                             &self.data.departments,
                             &theme,
-                            |course, window, cx| cx.update(|view: &mut RootView, cx| view.select_course(course, window, cx)),
-                            |code, window, cx| cx.update(|view: &mut RootView, cx| view.toggle_bookmark(code, window, cx)),
-                            |dept, window, cx| cx.update(|view: &mut RootView, cx| view.select_dept(dept, window, cx)),
+                            cx,
                         ).into_any_element(),
                         Tab::Player => player_view::render_player(
                             &self.state,
                             &theme,
-                            |tab, window, cx| cx.update(|view: &mut RootView, cx| view.set_tab(tab, window, cx)),
-                            |lecture, window, cx| cx.update(|view: &mut RootView, cx| view.select_lecture(lecture, window, cx)),
-                            |window, cx| cx.update(|view: &mut RootView, cx| view.toggle_play(window, cx)),
-                            |speed, window, cx| cx.update(|view: &mut RootView, cx| view.set_speed(speed, window, cx)),
+                            cx,
                         ).into_any_element(),
                         Tab::Saved => saved_view::render_saved(
                             &self.state,
                             &self.data.courses,
                             &theme,
-                            |tab, window, cx| cx.update(|view: &mut RootView, cx| view.set_tab(tab, window, cx)),
-                            |course, window, cx| cx.update(|view: &mut RootView, cx| view.select_course(course, window, cx)),
-                            |code, window, cx| cx.update(|view: &mut RootView, cx| view.toggle_bookmark(code, window, cx)),
+                            cx,
                         ).into_any_element(),
                         Tab::Handouts => handouts_view::render_handouts(
                             &self.data.handouts,

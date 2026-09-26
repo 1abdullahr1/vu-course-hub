@@ -1,14 +1,15 @@
 use gpui::prelude::*;
-use gpui::{ClickEvent, Context, Window, div, px, rgb};
-use crate::state::Tab;
+use gpui::{Context, FontWeight, Window, div, px};
+use crate::RootView;
+use crate::state::{AppState, Tab};
 use crate::theme::Theme;
 
-pub fn render_sidebar<V: 'static>(
-    current_tab: Tab,
+pub fn render_sidebar(
+    state: &AppState,
     theme: &Theme,
-    on_tab_change: impl Fn(Tab, &mut Window, &mut Context<V>) + 'static + Copy,
-    on_toggle_theme: impl Fn(&mut Window, &mut Context<V>) + 'static + Copy,
+    cx: &Context<RootView>,
 ) -> impl IntoElement {
+    let current_tab = state.current_tab;
     let bg_color = theme.surface;
     let border_color = theme.border;
     let text_primary = theme.text_primary;
@@ -48,8 +49,8 @@ pub fn render_sidebar<V: 'static>(
                                 .flex()
                                 .items_center()
                                 .justify_center()
-                                .text_color(rgb(0xFFFFFF))
-                                .font_bold()
+                                .text_color(theme.white)
+                                .font_weight(FontWeight::BOLD)
                                 .text_lg()
                                 .child("VU")
                         )
@@ -60,7 +61,7 @@ pub fn render_sidebar<V: 'static>(
                                 .child(
                                     div()
                                         .text_color(text_primary)
-                                        .font_bold()
+                                        .font_weight(FontWeight::BOLD)
                                         .text_base()
                                         .child("VU Course Hub")
                                 )
@@ -78,12 +79,12 @@ pub fn render_sidebar<V: 'static>(
                         .flex()
                         .flex_col()
                         .gap_1()
-                        .child(nav_item("Learn", Tab::Home, current_tab, theme, on_tab_change))
-                        .child(nav_item("Explore Courses", Tab::Courses, current_tab, theme, on_tab_change))
-                        .child(nav_item("Lecture Player", Tab::Player, current_tab, theme, on_tab_change))
-                        .child(nav_item("My Learning", Tab::Saved, current_tab, theme, on_tab_change))
-                        .child(nav_item("Handouts", Tab::Handouts, current_tab, theme, on_tab_change))
-                        .child(nav_item("VU Portals & Links", Tab::Links, current_tab, theme, on_tab_change))
+                        .child(nav_item("Learn", Tab::Home, current_tab, theme, cx))
+                        .child(nav_item("Explore Courses", Tab::Courses, current_tab, theme, cx))
+                        .child(nav_item("Lecture Player", Tab::Player, current_tab, theme, cx))
+                        .child(nav_item("My Learning", Tab::Saved, current_tab, theme, cx))
+                        .child(nav_item("Handouts", Tab::Handouts, current_tab, theme, cx))
+                        .child(nav_item("VU Portals & Links", Tab::Links, current_tab, theme, cx))
                 )
         )
         .child(
@@ -104,21 +105,21 @@ pub fn render_sidebar<V: 'static>(
                         .rounded_md()
                         .bg(theme.surface_hover)
                         .cursor_pointer()
-                        .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                            on_toggle_theme(window, cx);
-                        })
+                        .on_click(cx.listener(|this: &mut RootView, _event, window, cx| {
+                            this.toggle_theme(window, cx);
+                        }))
                         .child(
                             div()
                                 .text_color(text_secondary)
                                 .text_xs()
-                                .font_bold()
+                                .font_weight(FontWeight::BOLD)
                                 .child("Theme Mode")
                         )
                         .child(
                             div()
                                 .text_color(primary_color)
                                 .text_xs()
-                                .font_bold()
+                                .font_weight(FontWeight::BOLD)
                                 .child(match theme.mode {
                                     crate::theme::ThemeMode::Light => "Light",
                                     crate::theme::ThemeMode::Dark => "Dark",
@@ -135,12 +136,12 @@ pub fn render_sidebar<V: 'static>(
         )
 }
 
-fn nav_item<V: 'static>(
+fn nav_item(
     title: &'static str,
     tab: Tab,
     current_tab: Tab,
     theme: &Theme,
-    on_tab_change: impl Fn(Tab, &mut Window, &mut Context<V>) + 'static + Copy,
+    cx: &Context<RootView>,
 ) -> impl IntoElement {
     let is_selected = current_tab == tab;
     let bg = if is_selected {
@@ -148,6 +149,7 @@ fn nav_item<V: 'static>(
     } else {
         theme.surface
     };
+
     let text_color = if is_selected {
         theme.primary
     } else {
@@ -163,13 +165,13 @@ fn nav_item<V: 'static>(
         .bg(bg)
         .cursor_pointer()
         .hover(|s| s.bg(theme.surface_hover))
-        .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-            on_tab_change(tab, window, cx);
-        })
+        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+            this.set_tab(tab, window, cx);
+        }))
         .child(
             div()
                 .text_color(text_color)
-                .font_weight(if is_selected { gpui::FontWeight::BOLD } else { gpui::FontWeight::NORMAL })
+                .font_weight(if is_selected { FontWeight::BOLD } else { FontWeight::NORMAL })
                 .text_sm()
                 .child(title)
         )

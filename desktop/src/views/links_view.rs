@@ -1,9 +1,9 @@
 use gpui::prelude::*;
-use gpui::{Context, Window, div, px, rgb};
+use gpui::{FontWeight, div, px};
 use crate::models::ResourceLink;
 use crate::theme::Theme;
 
-pub fn render_links<V: 'static>(
+pub fn render_links(
     links: &[ResourceLink],
     theme: &Theme,
 ) -> impl IntoElement {
@@ -28,7 +28,7 @@ pub fn render_links<V: 'static>(
                 .child(
                     div()
                         .text_color(text_primary)
-                        .font_bold()
+                        .font_weight(FontWeight::BOLD)
                         .text_2xl()
                         .child("Virtual University Portals & Links")
                 )
@@ -41,6 +41,7 @@ pub fn render_links<V: 'static>(
         )
         .child(
             div()
+                .id("links_scroll")
                 .flex()
                 .flex_wrap()
                 .gap_4()
@@ -68,7 +69,7 @@ pub fn render_links<V: 'static>(
                                 .child(
                                     div()
                                         .text_color(text_primary)
-                                        .font_bold()
+                                        .font_weight(FontWeight::BOLD)
                                         .text_base()
                                         .child(item.title.clone())
                                 )
@@ -103,12 +104,12 @@ pub fn render_links<V: 'static>(
                                         .py_2()
                                         .rounded_lg()
                                         .bg(primary_color)
-                                        .text_color(rgb(0xFFFFFF))
-                                        .font_bold()
+                                        .text_color(theme.white)
+                                        .font_weight(FontWeight::BOLD)
                                         .text_xs()
                                         .cursor_pointer()
                                         .hover(|s| s.opacity(0.9))
-                                        .on_mouse_down(gpui::MouseButton::Left, move |_event, _window, _cx| {
+                                        .on_click(move |_event, _window, _cx| {
                                             let _ = open::that(&url);
                                         })
                                         .child("Open Portal")

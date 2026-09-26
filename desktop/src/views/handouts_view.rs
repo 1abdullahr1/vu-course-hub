@@ -1,9 +1,9 @@
 use gpui::prelude::*;
-use gpui::{Context, Window, div, px, rgb};
+use gpui::{FontWeight, div, px};
 use crate::models::Handout;
 use crate::theme::Theme;
 
-pub fn render_handouts<V: 'static>(
+pub fn render_handouts(
     handouts: &[Handout],
     theme: &Theme,
 ) -> impl IntoElement {
@@ -28,7 +28,7 @@ pub fn render_handouts<V: 'static>(
                 .child(
                     div()
                         .text_color(text_primary)
-                        .font_bold()
+                        .font_weight(FontWeight::BOLD)
                         .text_2xl()
                         .child("VU Course Handouts")
                 )
@@ -42,6 +42,7 @@ pub fn render_handouts<V: 'static>(
         .child(
             // Handouts Table / Cards
             div()
+                .id("handouts_scroll")
                 .flex()
                 .flex_col()
                 .gap_3()
@@ -72,10 +73,10 @@ pub fn render_handouts<V: 'static>(
                                         .rounded_md()
                                         .bg(theme.chip_bg)
                                         .text_color(primary_color)
-                                        .font_bold()
+                                        .font_weight(FontWeight::BOLD)
                                         .text_sm()
                                         .child(item.course_code.clone())
-                                    )
+                                )
                                 .child(
                                     div()
                                         .flex()
@@ -83,7 +84,7 @@ pub fn render_handouts<V: 'static>(
                                         .child(
                                             div()
                                                 .text_color(text_primary)
-                                                .font_bold()
+                                                .font_weight(FontWeight::BOLD)
                                                 .text_base()
                                                 .child(item.title.clone())
                                         )
@@ -101,12 +102,12 @@ pub fn render_handouts<V: 'static>(
                                 .py_2()
                                 .rounded_lg()
                                 .bg(primary_color)
-                                .text_color(rgb(0xFFFFFF))
-                                .font_bold()
+                                .text_color(theme.white)
+                                .font_weight(FontWeight::BOLD)
                                 .text_xs()
                                 .cursor_pointer()
                                 .hover(|s| s.opacity(0.9))
-                                .on_mouse_down(gpui::MouseButton::Left, move |_event, _window, _cx| {
+                                .on_click(move |_event, _window, _cx| {
                                     let _ = open::that(&encoded_url);
                                 })
                                 .child("Download PDF")

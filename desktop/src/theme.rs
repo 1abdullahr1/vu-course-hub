@@ -1,4 +1,4 @@
-use gpui::{Hsla, Rgba, rgb, rgba};
+use gpui::{Hsla, rgb};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ThemeMode {
@@ -21,6 +21,8 @@ pub struct Theme {
     pub accent: Hsla,
     pub card_bg: Hsla,
     pub chip_bg: Hsla,
+    pub white: Hsla,
+    pub black: Hsla,
 }
 
 impl Theme {
@@ -40,6 +42,8 @@ impl Theme {
             accent: rgb(0xFAA826).into(),
             card_bg: rgb(0xFFFFFF).into(),
             chip_bg: rgb(0xE8EEF8).into(),
+            white: gpui::white(),
+            black: gpui::black(),
         }
     }
 
@@ -59,6 +63,8 @@ impl Theme {
             accent: rgb(0xFAA826).into(),
             card_bg: rgb(0x181A20).into(),
             chip_bg: rgb(0x1E2433).into(),
+            white: gpui::white(),
+            black: gpui::black(),
         }
     }
 }

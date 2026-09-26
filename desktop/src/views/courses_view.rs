@@ -1,17 +1,16 @@
 use gpui::prelude::*;
-use gpui::{Context, Window, div, px, rgb};
+use gpui::{Context, FontWeight, Window, div, px};
+use crate::RootView;
 use crate::models::Course;
 use crate::state::AppState;
 use crate::theme::Theme;
 
-pub fn render_courses<V: 'static>(
+pub fn render_courses(
     state: &AppState,
     courses: &[Course],
     departments: &[String],
     theme: &Theme,
-    on_select_course: impl Fn(Course, &mut Window, &mut Context<V>) + 'static + Copy,
-    on_toggle_bookmark: impl Fn(String, &mut Window, &mut Context<V>) + 'static + Copy,
-    on_select_dept: impl Fn(String, &mut Window, &mut Context<V>) + 'static + Copy,
+    cx: &Context<RootView>,
 ) -> impl IntoElement {
     let text_primary = theme.text_primary;
     let text_secondary = theme.text_secondary;
@@ -56,7 +55,7 @@ pub fn render_courses<V: 'static>(
                         .child(
                             div()
                                 .text_color(text_primary)
-                                .font_bold()
+                                .font_weight(FontWeight::BOLD)
                                 .text_2xl()
                                 .child("Explore All Courses")
                         )
@@ -82,20 +81,21 @@ pub fn render_courses<V: 'static>(
                         .py_1()
                         .rounded_full()
                         .bg(if is_active { primary_color } else { theme.surface_hover })
-                        .text_color(if is_active { rgb(0xFFFFFF) } else { text_secondary })
+                        .text_color(if is_active { theme.white } else { text_secondary })
                         .text_xs()
-                        .font_weight(if is_active { gpui::FontWeight::BOLD } else { gpui::FontWeight::NORMAL })
+                        .font_weight(if is_active { FontWeight::BOLD } else { FontWeight::NORMAL })
                         .cursor_pointer()
                         .hover(|s| s.opacity(0.85))
-                        .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                            on_select_dept(dept_name.clone(), window, cx);
-                        })
+                        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                            this.select_dept(dept_name.clone(), window, cx);
+                        }))
                         .child(dept.clone())
                 }))
         )
         .child(
             // Course Cards Grid
             div()
+                .id("courses_scroll")
                 .flex()
                 .flex_wrap()
                 .gap_4()
@@ -135,7 +135,7 @@ pub fn render_courses<V: 'static>(
                                                 .rounded_md()
                                                 .bg(theme.chip_bg)
                                                 .text_color(primary_color)
-                                                .font_bold()
+                                                .font_weight(FontWeight::BOLD)
                                                 .text_xs()
                                                 .child(course.courseCode.clone())
                                         )
@@ -147,17 +147,17 @@ pub fn render_courses<V: 'static>(
                                                 .cursor_pointer()
                                                 .text_color(if is_saved { theme.accent } else { theme.text_muted })
                                                 .text_xs()
-                                                .font_bold()
-                                                .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                                    on_toggle_bookmark(code_for_bookmark.clone(), window, cx);
-                                                })
+                                                .font_weight(FontWeight::BOLD)
+                                                .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                                    this.toggle_bookmark(code_for_bookmark.clone(), window, cx);
+                                                }))
                                                 .child(if is_saved { "Saved" } else { "Save" })
                                         )
                                 )
                                 .child(
                                     div()
                                         .text_color(text_primary)
-                                        .font_bold()
+                                        .font_weight(FontWeight::BOLD)
                                         .text_base()
                                         .child(course.clean_title())
                                 )
@@ -188,14 +188,14 @@ pub fn render_courses<V: 'static>(
                                         .py_1()
                                         .rounded_md()
                                         .bg(primary_color)
-                                        .text_color(rgb(0xFFFFFF))
-                                        .font_bold()
+                                        .text_color(theme.white)
+                                        .font_weight(FontWeight::BOLD)
                                         .text_xs()
                                         .cursor_pointer()
                                         .hover(|s| s.opacity(0.9))
-                                        .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
-                                            on_select_course(course_clone.clone(), window, cx);
-                                        })
+                                        .on_click(cx.listener(move |this: &mut RootView, _event, window, cx| {
+                                            this.select_course(course_clone.clone(), window, cx);
+                                        }))
                                         .child("Watch")
                                 )
                         )
