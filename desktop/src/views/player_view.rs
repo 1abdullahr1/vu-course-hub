@@ -61,9 +61,9 @@ pub fn render_player(
                                     .justify_center()
                                     .text_color(theme.white)
                                     .font_weight(FontWeight::BOLD)
-                                    .text_2xl()
+                                    .text_xl()
                                     .hover(|s| s.opacity(0.85))
-                                    .child("▶")
+                                    .child("PLAY")
                             )
                             .child(
                                 div()
@@ -82,7 +82,7 @@ pub fn render_player(
                                         div()
                                             .text_color(text_secondary)
                                             .text_xs()
-                                            .child("Click to watch in HD Video Player")
+                                            .child("In-App HD Video Player")
                                     )
                             )
                             .child(
@@ -95,7 +95,7 @@ pub fn render_player(
                                     .text_xs()
                                     .font_weight(FontWeight::BOLD)
                                     .child(if state.is_playing {
-                                        "Playing in Video Window (Click to re-open)"
+                                        "In-App HD Player Active"
                                     } else {
                                         "Ready to Play • Virtual University Official HD"
                                     })
@@ -131,7 +131,7 @@ pub fn render_player(
                                             .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                                 this.play_current_lecture(window, cx);
                                             }))
-                                            .child("▶ Play Video")
+                                            .child("Play Video")
                                     )
                                     .child(
                                         div()
@@ -148,7 +148,7 @@ pub fn render_player(
                                             .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                                 this.prev_lecture(window, cx);
                                             }))
-                                            .child("⏮ Prev")
+                                            .child("Prev")
                                     )
                                     .child(
                                         div()
@@ -165,7 +165,7 @@ pub fn render_player(
                                             .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                                 this.next_lecture(window, cx);
                                             }))
-                                            .child("⏭ Next")
+                                            .child("Next")
                                     )
                             )
                             .child(
@@ -183,7 +183,7 @@ pub fn render_player(
                                     .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                         this.open_current_in_browser(window, cx);
                                     }))
-                                    .child("↗ Open in Browser")
+                                    .child("Open in Browser")
                             )
                     )
                     .child(

@@ -12,6 +12,7 @@ impl PlayerLauncher {
         format!("https://www.youtube.com/watch?list={}&index={}", playlist_id, lecture_index.max(1))
     }
 
+    #[allow(dead_code)]
     pub fn play(playlist_id: &str, lecture_index: i32, first_video_id: Option<&str>) {
         let watch_url = Self::get_watch_url(playlist_id, lecture_index, first_video_id);
 

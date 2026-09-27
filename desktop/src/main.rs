@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod data;
+mod embedded_player;
 mod models;
 mod player;
 mod state;
@@ -14,6 +15,7 @@ use gpui::{
     div, point, px, size,
 };
 use crate::data::CourseData;
+use crate::embedded_player::EmbeddedPlayerManager;
 use crate::models::{Course, Lecture};
 use crate::player::PlayerLauncher;
 
@@ -60,14 +62,20 @@ impl RootView {
 
     pub fn set_tab(&mut self, tab: Tab, _window: &mut Window, cx: &mut Context<Self>) {
         self.state.current_tab = tab;
+        if tab == Tab::Player {
+            EmbeddedPlayerManager::show();
+        } else {
+            EmbeddedPlayerManager::hide();
+        }
         cx.notify();
     }
 
-    pub fn select_course(&mut self, course: Course, _window: &mut Window, cx: &mut Context<Self>) {
+    pub fn select_course(&mut self, course: Course, window: &mut Window, cx: &mut Context<Self>) {
         let lectures = CourseData::generate_lectures(&course);
         self.state.set_active_course(course.clone(), lectures);
         self.state.is_playing = true;
-        PlayerLauncher::play(&course.playlistId, 1, course.firstVideoId.as_deref());
+        self.set_tab(Tab::Player, window, cx);
+        EmbeddedPlayerManager::navigate_to_lecture(&course.playlistId, 1, course.firstVideoId.as_deref());
         cx.notify();
     }
 
@@ -76,14 +84,14 @@ impl RootView {
         let first_id = self.state.selected_course.as_ref().and_then(|c| c.firstVideoId.clone());
         self.state.active_lecture = Some(lecture.clone());
         self.state.is_playing = true;
-        PlayerLauncher::play(&playlist_id, lecture.lecture_number, first_id.as_deref());
+        EmbeddedPlayerManager::navigate_to_lecture(&playlist_id, lecture.lecture_number, first_id.as_deref());
         cx.notify();
     }
 
     pub fn play_current_lecture(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
         if let (Some(course), Some(lec)) = (&self.state.selected_course, &self.state.active_lecture) {
             self.state.is_playing = true;
-            PlayerLauncher::play(&course.playlistId, lec.lecture_number, course.firstVideoId.as_deref());
+            EmbeddedPlayerManager::navigate_to_lecture(&course.playlistId, lec.lecture_number, course.firstVideoId.as_deref());
             cx.notify();
         }
     }
@@ -99,7 +107,7 @@ impl RootView {
         if let Some(next_lec) = self.state.next_lecture() {
             if let Some(course) = &self.state.selected_course {
                 self.state.is_playing = true;
-                PlayerLauncher::play(&course.playlistId, next_lec.lecture_number, course.firstVideoId.as_deref());
+                EmbeddedPlayerManager::navigate_to_lecture(&course.playlistId, next_lec.lecture_number, course.firstVideoId.as_deref());
             }
             cx.notify();
         }
@@ -109,7 +117,7 @@ impl RootView {
         if let Some(prev_lec) = self.state.prev_lecture() {
             if let Some(course) = &self.state.selected_course {
                 self.state.is_playing = true;
-                PlayerLauncher::play(&course.playlistId, prev_lec.lecture_number, course.firstVideoId.as_deref());
+                EmbeddedPlayerManager::navigate_to_lecture(&course.playlistId, prev_lec.lecture_number, course.firstVideoId.as_deref());
             }
             cx.notify();
         }
