@@ -1,5 +1,8 @@
 // VU Course Hub Desktop Application Logic
 
+// Supported Playback Speeds from 1.0x to 4.0x
+const PLAYBACK_SPEEDS = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0];
+
 // Application State
 const state = {
   courses: [],
@@ -15,6 +18,9 @@ const state = {
   savedSubtab: "all",
   resourceSubtab: "handouts",
   resourceQuery: "",
+  playbackSpeed: 1.0,
+  isSidebarCollapsed: false,
+  isPlaylistCollapsed: false,
   theme: "dark",
   currentTab: "home"
 };
@@ -181,6 +187,148 @@ function switchTab(tabId) {
   }
 }
 
+// Sidebar Collapse / Expand Toggle
+function toggleSidebar() {
+  const sidebar = document.getElementById("app-sidebar");
+  state.isSidebarCollapsed = !state.isSidebarCollapsed;
+  if (state.isSidebarCollapsed) {
+    sidebar.classList.add("collapsed");
+    document.getElementById("btn-sidebar-toggle").title = "Expand Sidebar";
+  } else {
+    sidebar.classList.remove("collapsed");
+    document.getElementById("btn-sidebar-toggle").title = "Collapse Sidebar";
+  }
+  try {
+    localStorage.setItem("vu_sidebar_collapsed", state.isSidebarCollapsed ? "true" : "false");
+  } catch (e) {}
+}
+
+function initSidebarState() {
+  try {
+    state.isSidebarCollapsed = localStorage.getItem("vu_sidebar_collapsed") === "true";
+  } catch (e) {
+    state.isSidebarCollapsed = false;
+  }
+  const sidebar = document.getElementById("app-sidebar");
+  if (state.isSidebarCollapsed) {
+    sidebar.classList.add("collapsed");
+    document.getElementById("btn-sidebar-toggle").title = "Expand Sidebar";
+  }
+}
+
+// Collapsible Video Playlist Toggle
+function togglePlaylist(forceState) {
+  const playerLayout = document.getElementById("player-active-state");
+  const label = document.getElementById("playlist-toggle-label");
+
+  if (typeof forceState === "boolean") {
+    state.isPlaylistCollapsed = forceState;
+  } else {
+    state.isPlaylistCollapsed = !state.isPlaylistCollapsed;
+  }
+
+  if (state.isPlaylistCollapsed) {
+    playerLayout.classList.add("playlist-collapsed");
+    if (label) label.textContent = "Show Playlist";
+  } else {
+    playerLayout.classList.remove("playlist-collapsed");
+    if (label) label.textContent = "Hide Playlist";
+  }
+
+  try {
+    localStorage.setItem("vu_playlist_collapsed", state.isPlaylistCollapsed ? "true" : "false");
+  } catch (e) {}
+}
+
+function initPlaylistState() {
+  try {
+    state.isPlaylistCollapsed = localStorage.getItem("vu_playlist_collapsed") === "true";
+  } catch (e) {
+    state.isPlaylistCollapsed = false;
+  }
+  togglePlaylist(state.isPlaylistCollapsed);
+}
+
+// Explicit Fullscreen Control
+function toggleFullscreen() {
+  const container = document.getElementById("video-container-box");
+  if (!container) return;
+
+  if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+    if (container.requestFullscreen) {
+      container.requestFullscreen();
+    } else if (container.webkitRequestFullscreen) {
+      container.webkitRequestFullscreen();
+    } else if (container.msRequestFullscreen) {
+      container.msRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  }
+}
+
+// Handle Fullscreen Change Events
+function handleFullscreenChange() {
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+  const btn = document.getElementById("btn-fullscreen");
+  if (btn) {
+    btn.textContent = isFs ? "Exit Fullscreen" : "Fullscreen";
+  }
+}
+
+// Playback Speed Controls (1x to 4x)
+function applyPlaybackRate(speed) {
+  state.playbackSpeed = speed;
+  const iframe = document.getElementById("player-iframe");
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage(JSON.stringify({
+      event: "command",
+      func: "setPlaybackRate",
+      args: [speed]
+    }), "*");
+  }
+
+  const speedDisplay = document.getElementById("speed-display");
+  if (speedDisplay) {
+    const formatted = speed % 1 === 0 ? `${speed.toFixed(1)}x` : `${speed}x`;
+    speedDisplay.textContent = formatted;
+  }
+
+  try {
+    localStorage.setItem("vu_playback_speed", String(speed));
+  } catch (e) {}
+}
+
+function increaseSpeed() {
+  const current = state.playbackSpeed;
+  const next = PLAYBACK_SPEEDS.find(s => s > current);
+  if (next !== undefined) {
+    applyPlaybackRate(next);
+  }
+}
+
+function decreaseSpeed() {
+  const current = state.playbackSpeed;
+  const reversed = [...PLAYBACK_SPEEDS].reverse();
+  const prev = reversed.find(s => s < current);
+  if (prev !== undefined) {
+    applyPlaybackRate(prev);
+  }
+}
+
+function cycleSpeed() {
+  const cycleList = [1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0];
+  const idx = cycleList.indexOf(state.playbackSpeed);
+  const nextIdx = (idx + 1) % cycleList.length;
+  applyPlaybackRate(cycleList[nextIdx]);
+}
+
 // Data Persistence (Bookmarks, Enrolled Courses, Watch History)
 function loadUserData() {
   try {
@@ -202,6 +350,11 @@ function loadUserData() {
     const last = localStorage.getItem("vu_last_watched");
     if (last) state.lastWatched = JSON.parse(last);
   } catch (e) { state.lastWatched = null; }
+
+  try {
+    const sp = parseFloat(localStorage.getItem("vu_playback_speed") || "1.0");
+    if (sp >= 1.0 && sp <= 4.0) state.playbackSpeed = sp;
+  } catch (e) {}
 
   updateSavedBadge();
 }
@@ -385,6 +538,11 @@ function renderPlayer() {
     iframe.src = embedUrl;
   }
   placeholder.classList.add("hidden");
+
+  // Re-apply current speed after iframe initializes
+  setTimeout(() => {
+    applyPlaybackRate(state.playbackSpeed);
+  }, 750);
 
   // Render Playlist Items
   const listEl = document.getElementById("playlist-items-list");
@@ -860,6 +1018,8 @@ async function loadCoursesData() {
 function initApp() {
   initTheme();
   loadUserData();
+  initSidebarState();
+  initPlaylistState();
 
   // Navigation Click Handlers
   document.querySelectorAll(".nav-item").forEach(item => {
@@ -867,6 +1027,12 @@ function initApp() {
       switchTab(item.dataset.tab);
     };
   });
+
+  // Sidebar Collapse Button
+  const btnSidebarToggle = document.getElementById("btn-sidebar-toggle");
+  if (btnSidebarToggle) {
+    btnSidebarToggle.onclick = toggleSidebar;
+  }
 
   // Explore Courses Search
   const searchInput = document.getElementById("course-search-input");
@@ -944,6 +1110,30 @@ function initApp() {
   document.getElementById("btn-prev-lec").onclick = prevLecture;
   document.getElementById("btn-next-lec").onclick = nextLecture;
   document.getElementById("btn-open-browser").onclick = openCurrentInBrowser;
+
+  // Explicit Fullscreen Button & Listeners
+  const btnFs = document.getElementById("btn-fullscreen");
+  if (btnFs) {
+    btnFs.onclick = toggleFullscreen;
+  }
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+  document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+  document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+  // Speed Stepper Controls ([-] 1.0x [+])
+  const btnSpeedDown = document.getElementById("btn-speed-down");
+  const btnSpeedUp = document.getElementById("btn-speed-up");
+  const speedDisplay = document.getElementById("speed-display");
+  if (btnSpeedDown) btnSpeedDown.onclick = decreaseSpeed;
+  if (btnSpeedUp) btnSpeedUp.onclick = increaseSpeed;
+  if (speedDisplay) speedDisplay.onclick = cycleSpeed;
+
+  // Playlist Collapsible Controls
+  const btnTogglePlaylist = document.getElementById("btn-toggle-playlist");
+  const btnClosePlaylist = document.getElementById("btn-close-playlist");
+  if (btnTogglePlaylist) btnTogglePlaylist.onclick = () => togglePlaylist();
+  if (btnClosePlaylist) btnClosePlaylist.onclick = () => togglePlaylist(true);
 
   // Load Data
   loadCoursesData();
