@@ -9,6 +9,12 @@ const state = {
   selectedCourse: null,
   currentLectureIndex: 1,
   savedCodes: new Set(),
+  enrolledCodes: new Set(),
+  watchHistory: [],
+  lastWatched: null,
+  savedSubtab: "all",
+  resourceSubtab: "handouts",
+  resourceQuery: "",
   theme: "dark",
   currentTab: "home"
 };
@@ -49,15 +55,34 @@ const officialLinks = [
     title: "VU Admissions Portal",
     url: "https://www.vu.edu.pk/apply",
     description: "Program criteria, fee schedules, and new student admission portal."
-  },
-  {
-    title: "VU Past Papers & Solutions",
-    url: "https://www.google.com/search?q=Virtual+University+past+papers+filetype:pdf",
-    description: "Past midterm and final exam papers, solved questions, and review files."
   }
 ];
 
-// Helper to get Tauri invoke function across different Tauri injection setups
+// Academic Tools List
+const academicTools = [
+  {
+    title: "VU GPA & CGPA Calculator",
+    url: "https://www.google.com/search?q=VU+GPA+CGPA+calculator",
+    description: "Calculate your semester GPA and cumulative CGPA based on official grading scales."
+  },
+  {
+    title: "VU Past Papers & Solved Solutions",
+    url: "https://www.google.com/search?q=Virtual+University+past+papers+filetype:pdf",
+    description: "Access past midterm and final examination papers, question banks, and review guides."
+  },
+  {
+    title: "Academic Calendar & Schedule",
+    url: "https://www.vu.edu.pk/pages/academiccalendar.aspx",
+    description: "Official semester dates, course selection deadlines, and examination schedules."
+  },
+  {
+    title: "VU Student Support Services",
+    url: "https://support.vu.edu.pk",
+    description: "Submit tickets for technical support, fee queries, and degree processing."
+  }
+];
+
+// Helper to get Tauri invoke function across different injection models
 function getTauriInvoke() {
   if (window.__TAURI__) {
     if (typeof window.__TAURI__.invoke === "function") return window.__TAURI__.invoke;
@@ -101,6 +126,17 @@ function getDepartment(course) {
   return course.department && course.department.trim() ? course.department.trim() : "General";
 }
 
+// Course Thumbnail Helper with reliable fallback
+function getCourseThumbnail(course) {
+  if (course.thumbnailUrl && course.thumbnailUrl.startsWith("http")) {
+    return course.thumbnailUrl;
+  }
+  if (course.firstVideoId) {
+    return `https://i.ytimg.com/vi/${course.firstVideoId}/hqdefault.jpg`;
+  }
+  return "icons/icon.png";
+}
+
 // Generate Embed URL for YouTube
 function getEmbedUrl(playlistId, lectureIndex, firstVideoId) {
   const cleanPid = (playlistId || "").trim();
@@ -136,30 +172,67 @@ function switchTab(tabId) {
     targetPanel.classList.add("active");
   }
 
-  if (tabId === "saved") {
+  if (tabId === "home") {
+    renderHomeView();
+  } else if (tabId === "saved") {
     renderSavedView();
+  } else if (tabId === "resources") {
+    renderResourcesView();
   }
 }
 
-// Bookmark Storage
-function loadSaved() {
+// Data Persistence (Bookmarks, Enrolled Courses, Watch History)
+function loadUserData() {
   try {
-    const raw = localStorage.getItem("vu_saved_codes");
-    if (raw) {
-      const arr = JSON.parse(raw);
-      state.savedCodes = new Set(arr);
-    }
-  } catch (e) {
-    state.savedCodes = new Set();
-  }
+    const saved = localStorage.getItem("vu_saved_codes");
+    if (saved) state.savedCodes = new Set(JSON.parse(saved));
+  } catch (e) { state.savedCodes = new Set(); }
+
+  try {
+    const enrolled = localStorage.getItem("vu_enrolled_codes");
+    if (enrolled) state.enrolledCodes = new Set(JSON.parse(enrolled));
+  } catch (e) { state.enrolledCodes = new Set(); }
+
+  try {
+    const history = localStorage.getItem("vu_watch_history");
+    if (history) state.watchHistory = JSON.parse(history);
+  } catch (e) { state.watchHistory = []; }
+
+  try {
+    const last = localStorage.getItem("vu_last_watched");
+    if (last) state.lastWatched = JSON.parse(last);
+  } catch (e) { state.lastWatched = null; }
+
   updateSavedBadge();
 }
 
-function saveSaved() {
+function saveUserData() {
   try {
     localStorage.setItem("vu_saved_codes", JSON.stringify(Array.from(state.savedCodes)));
   } catch (e) {}
+  try {
+    localStorage.setItem("vu_enrolled_codes", JSON.stringify(Array.from(state.enrolledCodes)));
+  } catch (e) {}
+  try {
+    localStorage.setItem("vu_watch_history", JSON.stringify(state.watchHistory));
+  } catch (e) {}
+  try {
+    if (state.lastWatched) {
+      localStorage.setItem("vu_last_watched", JSON.stringify(state.lastWatched));
+    }
+  } catch (e) {}
   updateSavedBadge();
+}
+
+function updateSavedBadge() {
+  const badge = document.getElementById("saved-badge");
+  const count = state.savedCodes.size;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
 }
 
 function toggleBookmark(code) {
@@ -168,9 +241,9 @@ function toggleBookmark(code) {
   } else {
     state.savedCodes.add(code);
   }
-  saveSaved();
+  saveUserData();
 
-  // Update card buttons if visible
+  // Update card buttons across UI
   document.querySelectorAll(`[data-bookmark-code="${code}"]`).forEach(btn => {
     const isSaved = state.savedCodes.has(code);
     btn.textContent = isSaved ? "Saved" : "Save";
@@ -183,17 +256,32 @@ function toggleBookmark(code) {
 
   if (state.currentTab === "saved") {
     renderSavedView();
+  } else if (state.currentTab === "home") {
+    renderHomeView();
   }
 }
 
-function updateSavedBadge() {
-  const badge = document.getElementById("saved-badge");
-  const count = state.savedCodes.size;
-  if (count > 0) {
-    badge.textContent = count;
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
+// Format relative time for watch history
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return "Recently";
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days}d ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
+
+// Clear Watch History
+function clearWatchHistory() {
+  if (confirm("Are you sure you want to clear your entire watch history?")) {
+    state.watchHistory = [];
+    saveUserData();
+    renderSavedView();
   }
 }
 
@@ -221,14 +309,40 @@ function playCourse(course, lectureIndex = 1) {
   state.selectedCourse = course;
   state.currentLectureIndex = lectureIndex;
 
-  // Save last watched
-  try {
-    localStorage.setItem("vu_last_watched", JSON.stringify({
-      code: getCourseCode(course),
-      lectureIndex: lectureIndex
-    }));
-  } catch (e) {}
+  const code = getCourseCode(course);
+  const title = getCleanTitle(course);
+  const totalLectures = Math.max(1, Math.min(course.videoCount || 45, 100));
+  const lecTitle = `Lecture ${String(lectureIndex).padStart(2, "0")} - ${title}`;
+  const now = Date.now();
 
+  // Add to enrolled courses
+  state.enrolledCodes.add(code);
+
+  // Update Last Watched
+  state.lastWatched = {
+    code: code,
+    playlistId: course.playlistId,
+    lectureIndex: lectureIndex,
+    lectureTitle: lecTitle,
+    timestamp: now
+  };
+
+  // Add to Watch History (keep max 50 recent items)
+  state.watchHistory = state.watchHistory.filter(item => !(item.courseCode === code && item.lectureIndex === lectureIndex));
+  state.watchHistory.unshift({
+    playlistId: course.playlistId,
+    courseCode: code,
+    courseTitle: title,
+    lectureIndex: lectureIndex,
+    lectureTitle: lecTitle,
+    timestamp: now,
+    thumbnailUrl: getCourseThumbnail(course)
+  });
+  if (state.watchHistory.length > 50) {
+    state.watchHistory = state.watchHistory.slice(0, 50);
+  }
+
+  saveUserData();
   switchTab("player");
   renderPlayer();
 }
@@ -329,30 +443,40 @@ function openCurrentInBrowser() {
   openExternal(url);
 }
 
-// Create Course Card Component
+// Create Rich Course Card with 16:9 Thumbnail (Matches Android item_course_card.xml)
 function createCourseCard(course) {
   const code = getCourseCode(course);
   const title = getCleanTitle(course);
   const dept = getDepartment(course);
-  const countText = course.videoCountText || `${course.videoCount || 45} lessons`;
+  const countText = course.videoCountText || `${course.videoCount || 45} lectures`;
   const isSaved = state.savedCodes.has(code);
+  const thumbUrl = getCourseThumbnail(course);
 
   const card = document.createElement("div");
   card.className = "course-card";
   card.innerHTML = `
-    <div>
-      <div class="card-top">
-        <span class="card-code">${code}</span>
-        <button class="btn-bookmark ${isSaved ? "saved" : ""}" data-bookmark-code="${code}">
-          ${isSaved ? "Saved" : "Save"}
-        </button>
+    <div class="card-thumb-wrapper">
+      <img src="${thumbUrl}" alt="${title}" class="card-thumb-img" onerror="this.src='icons/icon.png'">
+      <span class="card-duration-badge">${countText}</span>
+      <div class="card-play-overlay">
+        <div class="card-play-icon">PLAY</div>
       </div>
-      <h4 class="card-title">${title}</h4>
-      <p class="card-dept">${dept}</p>
     </div>
-    <div class="card-bottom">
-      <span class="card-count">${countText}</span>
-      <button class="btn btn-primary btn-sm watch-btn">Watch</button>
+    <div class="card-content">
+      <div>
+        <div class="card-top">
+          <span class="card-code">${code}</span>
+          <button class="btn-bookmark ${isSaved ? "saved" : ""}" data-bookmark-code="${code}" title="${isSaved ? "Saved to Bookmarks" : "Save Course"}">
+            ${isSaved ? "Saved" : "Save"}
+          </button>
+        </div>
+        <h4 class="card-title">${title}</h4>
+        <p class="card-dept">${dept}</p>
+      </div>
+      <div class="card-bottom">
+        <span class="card-count">${countText}</span>
+        <button class="btn btn-primary btn-sm watch-btn">Watch</button>
+      </div>
     </div>
   `;
 
@@ -373,7 +497,113 @@ function createCourseCard(course) {
   return card;
 }
 
-// Render Explore Courses
+// Create Compact Course Card for Learn Tab Carousel (Matches Android item_compact_course_card.xml)
+function createCompactCourseCard(course) {
+  const code = getCourseCode(course);
+  const title = getCleanTitle(course);
+  const countText = `${course.videoCount || 45} lectures`;
+  const thumbUrl = getCourseThumbnail(course);
+
+  const card = document.createElement("div");
+  card.className = "compact-course-card";
+  card.innerHTML = `
+    <div class="compact-thumb-box">
+      <img src="${thumbUrl}" alt="${title}" class="compact-thumb-img" onerror="this.src='icons/icon.png'">
+    </div>
+    <div class="compact-card-body">
+      <span class="compact-code">${code}</span>
+      <h5 class="compact-title">${title}</h5>
+      <span class="compact-lec-count">${countText}</span>
+    </div>
+  `;
+
+  card.onclick = () => {
+    playCourse(course, 1);
+  };
+
+  return card;
+}
+
+// Render Learn View (Dual State: Active Learning vs Empty State, matches Android HomeFragment)
+function renderHomeView() {
+  const activeDashboard = document.getElementById("home-active-dashboard");
+  const emptyDashboard = document.getElementById("home-empty-dashboard");
+
+  // Determine active enrolled/saved courses
+  const enrolledList = state.courses.filter(c => state.enrolledCodes.has(getCourseCode(c)) || state.savedCodes.has(getCourseCode(c)));
+
+  if (enrolledList.length === 0) {
+    // STATE B: New User Empty State
+    activeDashboard.classList.add("hidden");
+    emptyDashboard.classList.remove("hidden");
+
+    const emptyFeaturedGrid = document.getElementById("home-empty-featured-grid");
+    emptyFeaturedGrid.innerHTML = "";
+    state.courses.slice(0, 6).forEach(c => {
+      emptyFeaturedGrid.appendChild(createCourseCard(c));
+    });
+
+    document.getElementById("stat-courses").textContent = `${state.courses.length}+`;
+    document.getElementById("stat-depts").textContent = `${Math.max(1, state.departments.length - 1)}`;
+  } else {
+    // STATE A: Active Learning Dashboard
+    emptyDashboard.classList.add("hidden");
+    activeDashboard.classList.remove("hidden");
+
+    // 1. Hero Continue Learning Card
+    let heroCourse = null;
+    let heroLecIdx = 1;
+    if (state.lastWatched) {
+      heroCourse = state.courses.find(c => getCourseCode(c) === state.lastWatched.code);
+      heroLecIdx = state.lastWatched.lectureIndex || 1;
+    }
+    if (!heroCourse) {
+      heroCourse = enrolledList[0];
+      heroLecIdx = 1;
+    }
+
+    const heroCode = getCourseCode(heroCourse);
+    const heroTitle = getCleanTitle(heroCourse);
+    const heroDept = getDepartment(heroCourse);
+    const heroTotal = Math.max(1, heroCourse.videoCount || 45);
+    const heroProgressPct = Math.min(100, Math.round((heroLecIdx / heroTotal) * 100));
+
+    document.getElementById("hero-course-thumb").src = getCourseThumbnail(heroCourse);
+    document.getElementById("hero-course-duration").textContent = `${heroTotal} Lectures`;
+    document.getElementById("hero-course-dept").textContent = `${heroDept} • Virtual University`;
+    document.getElementById("hero-course-title").textContent = `${heroCode} - ${heroTitle}`;
+    document.getElementById("hero-course-progress").textContent = `Progress: Lecture ${heroLecIdx} of ${heroTotal}`;
+    document.getElementById("hero-progress-bar").style.width = `${heroProgressPct}%`;
+    document.getElementById("hero-resume-lec-title").textContent = `Lecture ${String(heroLecIdx).padStart(2, "0")} - ${heroTitle}`;
+
+    // Click on hero card or resume ribbon
+    const handleHeroPlay = () => playCourse(heroCourse, heroLecIdx);
+    document.getElementById("hero-course-card").onclick = handleHeroPlay;
+    document.getElementById("btn-hero-resume").onclick = (e) => {
+      e.stopPropagation();
+      handleHeroPlay();
+    };
+
+    // 2. Horizontal Carousel of Enrolled Courses
+    const carouselEl = document.getElementById("home-enrolled-carousel");
+    carouselEl.innerHTML = "";
+    enrolledList.forEach(c => {
+      carouselEl.appendChild(createCompactCourseCard(c));
+    });
+    document.getElementById("home-my-courses-title").textContent = `My Courses (${enrolledList.length})`;
+
+    // 3. Recommended Courses Section
+    const featuredGrid = document.getElementById("home-featured-grid");
+    featuredGrid.innerHTML = "";
+    const nonEnrolled = state.courses.filter(c => !state.enrolledCodes.has(getCourseCode(c))).slice(0, 6);
+    const displayList = nonEnrolled.length > 0 ? nonEnrolled : state.courses.slice(0, 6);
+    displayList.forEach(c => {
+      featuredGrid.appendChild(createCourseCard(c));
+    });
+  }
+}
+
+// Render Explore Courses View
 function renderCoursesView() {
   const container = document.getElementById("courses-grid");
   const countText = document.getElementById("courses-count-text");
@@ -415,58 +645,107 @@ function renderDeptPills() {
   });
 }
 
-// Render Home View
-function renderHomeView() {
-  const featuredGrid = document.getElementById("home-featured-grid");
-  featuredGrid.innerHTML = "";
+// Render My Learning View (Matches Android SavedFragment: My Courses, Bookmarks, and Watch History)
+function renderSavedView() {
+  const contentWrapper = document.getElementById("saved-content-wrapper");
+  const emptyState = document.getElementById("saved-empty-state");
 
-  const popular = state.courses.slice(0, 6);
-  popular.forEach(c => {
-    featuredGrid.appendChild(createCourseCard(c));
+  const myCoursesList = state.courses.filter(c => state.enrolledCodes.has(getCourseCode(c)));
+  const bookmarkedList = state.courses.filter(c => state.savedCodes.has(getCourseCode(c)));
+  const historyList = state.watchHistory;
+
+  const totalItems = myCoursesList.length + bookmarkedList.length + historyList.length;
+
+  if (totalItems === 0) {
+    contentWrapper.classList.add("hidden");
+    emptyState.classList.remove("hidden");
+    return;
+  }
+
+  contentWrapper.classList.remove("hidden");
+  emptyState.classList.add("hidden");
+
+  // Update Section Badges
+  document.getElementById("count-my-courses").textContent = myCoursesList.length;
+  document.getElementById("count-bookmarked").textContent = bookmarkedList.length;
+  document.getElementById("count-history").textContent = historyList.length;
+
+  // Filter sections by subtab
+  const secMyCourses = document.getElementById("section-my-courses");
+  const secBookmarked = document.getElementById("section-bookmarked");
+  const secHistory = document.getElementById("section-history");
+
+  const sub = state.savedSubtab;
+  secMyCourses.style.display = (sub === "all" || sub === "courses") && myCoursesList.length > 0 ? "flex" : "none";
+  secBookmarked.style.display = (sub === "all" || sub === "bookmarks") && bookmarkedList.length > 0 ? "flex" : "none";
+  secHistory.style.display = (sub === "all" || sub === "history") && historyList.length > 0 ? "flex" : "none";
+
+  // 1. Render My Courses Grid
+  const gridMyCourses = document.getElementById("grid-my-courses");
+  gridMyCourses.innerHTML = "";
+  myCoursesList.forEach(c => {
+    gridMyCourses.appendChild(createCourseCard(c));
   });
 
-  document.getElementById("stat-courses").textContent = `${state.courses.length}+`;
-  document.getElementById("stat-depts").textContent = `${state.departments.length - 1}`;
+  // 2. Render Bookmarked Courses Grid
+  const gridBookmarked = document.getElementById("grid-bookmarked");
+  gridBookmarked.innerHTML = "";
+  bookmarkedList.forEach(c => {
+    gridBookmarked.appendChild(createCourseCard(c));
+  });
+
+  // 3. Render Watch History List
+  const listHistory = document.getElementById("list-watch-history");
+  listHistory.innerHTML = "";
+  historyList.forEach(item => {
+    const historyCard = document.createElement("div");
+    historyCard.className = "history-item";
+    historyCard.innerHTML = `
+      <div class="history-left">
+        <div class="history-thumb-box">
+          <img src="${item.thumbnailUrl || 'icons/icon.png'}" alt="${item.courseTitle}" class="history-thumb-img" onerror="this.src='icons/icon.png'">
+          <span class="history-lec-badge">Lec ${String(item.lectureIndex).padStart(2, "0")}</span>
+        </div>
+        <div class="history-meta">
+          <span class="history-code">${item.courseCode}</span>
+          <h4 class="history-title">${item.lectureTitle}</h4>
+          <span class="history-time">${formatRelativeTime(item.timestamp)}</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm">Resume</button>
+    `;
+
+    historyCard.onclick = () => {
+      const course = state.courses.find(c => getCourseCode(c) === item.courseCode || c.playlistId === item.playlistId);
+      if (course) {
+        playCourse(course, item.lectureIndex);
+      }
+    };
+
+    listHistory.appendChild(historyCard);
+  });
 }
 
-// Render Saved Courses View
-function renderSavedView() {
-  const grid = document.getElementById("saved-courses-grid");
-  const empty = document.getElementById("saved-empty-state");
-  grid.innerHTML = "";
+// Render Resources View (Merged Handouts + Links + Tools, matches Android ResourcesActivity)
+function renderResourcesView() {
+  const query = state.resourceQuery.trim().toLowerCase();
 
-  const savedList = state.courses.filter(c => state.savedCodes.has(getCourseCode(c)));
+  // 1. Handouts Tab
+  const handoutsGrid = document.getElementById("handouts-grid");
+  handoutsGrid.innerHTML = "";
 
-  if (savedList.length === 0) {
-    grid.classList.add("hidden");
-    empty.classList.remove("hidden");
-  } else {
-    grid.classList.remove("hidden");
-    empty.classList.add("hidden");
-    savedList.forEach(c => {
-      grid.appendChild(createCourseCard(c));
-    });
-  }
-}
-
-// Render Handouts View
-function renderHandoutsView() {
-  const grid = document.getElementById("handouts-grid");
-  grid.innerHTML = "";
-
-  const searchInput = document.getElementById("handout-search-input");
-  const query = (searchInput.value || "").trim().toLowerCase();
-
-  const filtered = state.courses.filter(c => {
+  const filteredCourses = state.courses.filter(c => {
     const code = getCourseCode(c).toLowerCase();
     const title = getCleanTitle(c).toLowerCase();
-    return !query || code.includes(query) || title.includes(query);
+    const dept = getDepartment(c).toLowerCase();
+    return !query || code.includes(query) || title.includes(query) || dept.includes(query);
   });
 
-  filtered.forEach(c => {
+  filteredCourses.forEach(c => {
     const code = getCourseCode(c);
     const title = getCleanTitle(c);
     const dept = getDepartment(c);
+
     const card = document.createElement("div");
     card.className = "resource-card";
     card.innerHTML = `
@@ -480,16 +759,18 @@ function renderHandoutsView() {
     card.querySelector(".download-btn").onclick = () => {
       openExternal(`https://www.google.com/search?q=VU+${code}+handouts+filetype:pdf`);
     };
-    grid.appendChild(card);
+    handoutsGrid.appendChild(card);
   });
-}
 
-// Render Official Links View
-function renderLinksView() {
-  const grid = document.getElementById("links-grid");
-  grid.innerHTML = "";
+  // 2. VU Portals Tab
+  const portalsGrid = document.getElementById("portals-grid");
+  portalsGrid.innerHTML = "";
 
-  officialLinks.forEach(link => {
+  const filteredPortals = officialLinks.filter(link => {
+    return !query || link.title.toLowerCase().includes(query) || link.description.toLowerCase().includes(query);
+  });
+
+  filteredPortals.forEach(link => {
     const card = document.createElement("div");
     card.className = "resource-card";
     card.innerHTML = `
@@ -497,13 +778,45 @@ function renderLinksView() {
         <h4 class="resource-title">${link.title}</h4>
         <p class="resource-desc" style="margin-top: 6px;">${link.description}</p>
       </div>
-      <button class="btn btn-outline btn-sm open-btn">Launch Portal</button>
+      <button class="btn btn-outline btn-sm open-btn">Launch Portal &rarr;</button>
     `;
     card.querySelector(".open-btn").onclick = () => {
       openExternal(link.url);
     };
-    grid.appendChild(card);
+    portalsGrid.appendChild(card);
   });
+
+  // 3. Academic Tools Tab
+  const toolsGrid = document.getElementById("tools-grid");
+  toolsGrid.innerHTML = "";
+
+  const filteredTools = academicTools.filter(tool => {
+    return !query || tool.title.toLowerCase().includes(query) || tool.description.toLowerCase().includes(query);
+  });
+
+  filteredTools.forEach(tool => {
+    const card = document.createElement("div");
+    card.className = "resource-card";
+    card.innerHTML = `
+      <div>
+        <h4 class="resource-title">${tool.title}</h4>
+        <p class="resource-desc" style="margin-top: 6px;">${tool.description}</p>
+      </div>
+      <button class="btn btn-outline btn-sm open-btn">Open Tool &rarr;</button>
+    `;
+    card.querySelector(".open-btn").onclick = () => {
+      openExternal(tool.url);
+    };
+    toolsGrid.appendChild(card);
+  });
+
+  // Show active pane
+  document.querySelectorAll(".res-tab-pane").forEach(pane => pane.classList.add("hidden"));
+  const activePane = document.getElementById(`resource-tab-${state.resourceSubtab}`);
+  if (activePane) {
+    activePane.classList.remove("hidden");
+    activePane.classList.add("active");
+  }
 }
 
 // Load Courses Data from Tauri Backend or Local Assets
@@ -539,42 +852,14 @@ async function loadCoursesData() {
   renderDeptPills();
   renderCoursesView();
   renderHomeView();
-  renderHandoutsView();
-  renderLinksView();
-  loadSaved();
-  checkResumeLastWatched();
-}
-
-// Check and Setup Resume Last Watched
-function checkResumeLastWatched() {
-  try {
-    const raw = localStorage.getItem("vu_last_watched");
-    if (raw) {
-      const data = JSON.parse(raw);
-      const course = state.courses.find(c => getCourseCode(c) === data.code);
-      if (course) {
-        state.selectedCourse = course;
-        state.currentLectureIndex = data.lectureIndex || 1;
-        document.getElementById("hero-resume-btn").onclick = () => {
-          playCourse(course, state.currentLectureIndex);
-        };
-        return;
-      }
-    }
-  } catch (e) {}
-
-  document.getElementById("hero-resume-btn").onclick = () => {
-    if (state.courses.length > 0) {
-      playCourse(state.courses[0], 1);
-    } else {
-      switchTab("courses");
-    }
-  };
+  renderResourcesView();
+  loadUserData();
 }
 
 // Initialize Application Events
 function initApp() {
   initTheme();
+  loadUserData();
 
   // Navigation Click Handlers
   document.querySelectorAll(".nav-item").forEach(item => {
@@ -583,10 +868,7 @@ function initApp() {
     };
   });
 
-  // Hero Buttons
-  document.getElementById("hero-explore-btn").onclick = () => switchTab("courses");
-
-  // Search Input Handlers
+  // Explore Courses Search
   const searchInput = document.getElementById("course-search-input");
   const clearBtn = document.getElementById("search-clear-btn");
   searchInput.oninput = (e) => {
@@ -605,9 +887,50 @@ function initApp() {
     renderCoursesView();
   };
 
-  // Handouts Search
-  const handoutSearch = document.getElementById("handout-search-input");
-  handoutSearch.oninput = () => renderHandoutsView();
+  // Resources Search
+  const resSearch = document.getElementById("resource-search-input");
+  const resClear = document.getElementById("resource-search-clear");
+  resSearch.oninput = (e) => {
+    state.resourceQuery = e.target.value;
+    if (state.resourceQuery.length > 0) {
+      resClear.classList.remove("hidden");
+    } else {
+      resClear.classList.add("hidden");
+    }
+    renderResourcesView();
+  };
+  resClear.onclick = () => {
+    resSearch.value = "";
+    state.resourceQuery = "";
+    resClear.classList.add("hidden");
+    renderResourcesView();
+  };
+
+  // Resources Sub-tabs Switcher
+  document.querySelectorAll(".resource-tab-btn").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".resource-tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      state.resourceSubtab = btn.dataset.resTab;
+      renderResourcesView();
+    };
+  });
+
+  // My Learning Segmented Filter Pills
+  document.querySelectorAll(".segment-pill").forEach(pill => {
+    pill.onclick = () => {
+      document.querySelectorAll(".segment-pill").forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      state.savedSubtab = pill.dataset.subtab;
+      renderSavedView();
+    };
+  });
+
+  // Clear Watch History Button
+  const btnClearHist = document.getElementById("btn-clear-history");
+  if (btnClearHist) {
+    btnClearHist.onclick = clearWatchHistory;
+  }
 
   // Theme Toggle Button
   document.getElementById("theme-toggle").onclick = toggleTheme;

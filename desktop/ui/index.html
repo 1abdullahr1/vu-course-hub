@@ -35,11 +35,8 @@
             <span class="nav-label">My Learning</span>
             <span id="saved-badge" class="count-badge hidden">0</span>
           </button>
-          <button class="nav-item" data-tab="handouts">
-            <span class="nav-label">Handouts</span>
-          </button>
-          <button class="nav-item" data-tab="links">
-            <span class="nav-label">VU Portals & Links</span>
+          <button class="nav-item" data-tab="resources">
+            <span class="nav-label">Resources</span>
           </button>
         </nav>
       </div>
@@ -55,48 +52,101 @@
 
     <!-- Main Content Area -->
     <main class="content-area">
-      <!-- 1. Home / Learn View -->
+      <!-- 1. Learn View (Matches Android HomeFragment Dual States) -->
       <section id="view-home" class="view-panel active">
-        <div class="hero-banner">
-          <div class="hero-content">
-            <span class="hero-chip">Official Educational Portal</span>
-            <h2 class="hero-title">Virtual University Course Hub</h2>
-            <p class="hero-desc">Access high-definition video lectures, course outlines, handouts, and official study materials for all degree programs.</p>
-            <div class="hero-actions">
-              <button id="hero-resume-btn" class="btn btn-primary">Resume Watching</button>
-              <button id="hero-explore-btn" class="btn btn-secondary">Explore All Courses</button>
+        <!-- State A: Active Learning Dashboard (When user has watched or bookmarked courses) -->
+        <div id="home-active-dashboard" class="home-active-container hidden">
+          <!-- Hero Continue Learning Card (Matches Android card_hero_course) -->
+          <div class="hero-course-card" id="hero-course-card">
+            <div class="hero-thumb-wrapper">
+              <img id="hero-course-thumb" src="" alt="Course Thumbnail" class="hero-course-img" onerror="this.src='icons/icon.png'">
+              <span id="hero-course-duration" class="hero-duration-badge">45 Lectures</span>
+              <div class="hero-play-overlay">
+                <div class="play-icon-circle">PLAY</div>
+              </div>
+            </div>
+            <div class="hero-card-content">
+              <div class="hero-meta-dept" id="hero-course-dept">Computer Science • Virtual University</div>
+              <h2 class="hero-course-title" id="hero-course-title">CS201 - Introduction to Programming</h2>
+              <div class="hero-progress-row">
+                <span class="hero-progress-label" id="hero-course-progress">Progress: Lecture 01 of 45</span>
+                <div class="hero-progress-track">
+                  <div class="hero-progress-bar" id="hero-progress-bar" style="width: 2%;"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Resume Course Action Ribbon (Matches Android btn_resume_course) -->
+            <div class="hero-resume-ribbon" id="btn-hero-resume">
+              <div class="resume-ribbon-left">
+                <span class="ribbon-tag">Resume Course</span>
+                <span class="ribbon-lec-title" id="hero-resume-lec-title">Lecture 01 - Introduction</span>
+              </div>
+              <button class="btn-resume-action">Continue Watching &rarr;</button>
             </div>
           </div>
-          <div class="hero-art">
-            <img src="assets/il_learn.png" alt="Learn" onerror="this.style.display='none'">
+
+          <!-- My Enrolled Courses Section (Horizontal Carousel) -->
+          <div class="section-block" id="home-my-courses-section">
+            <div class="section-header">
+              <h3 class="section-title" id="home-my-courses-title">My Courses</h3>
+              <button class="link-btn" onclick="switchTab('saved')">View All &rarr;</button>
+            </div>
+            <div id="home-enrolled-carousel" class="enrolled-carousel"></div>
+          </div>
+
+          <!-- Recommended Courses Section -->
+          <div class="section-block">
+            <div class="section-header">
+              <h3 class="section-title">Recommended Courses</h3>
+              <button class="link-btn" onclick="switchTab('courses')">Explore All &rarr;</button>
+            </div>
+            <div id="home-featured-grid" class="cards-grid"></div>
           </div>
         </div>
 
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-val" id="stat-courses">512+</div>
-            <div class="stat-name">Academic Courses</div>
+        <!-- State B: New User Empty State (Matches Android layout_empty_state) -->
+        <div id="home-empty-dashboard" class="home-empty-container">
+          <div class="hero-banner">
+            <div class="hero-content">
+              <span class="hero-chip">Official Educational Portal</span>
+              <h2 class="hero-title">Empower Your Learning</h2>
+              <p class="hero-desc">Access thousands of high-definition video lectures, course outlines, handouts, and official study materials from Virtual University of Pakistan.</p>
+              <div class="hero-actions">
+                <button id="hero-find-btn" class="btn btn-primary" onclick="switchTab('courses')">Find a Course</button>
+                <button class="btn btn-secondary" onclick="switchTab('resources')">Browse Resources</button>
+              </div>
+            </div>
+            <div class="hero-art">
+              <img src="assets/il_learn.png" alt="Learn" onerror="this.style.display='none'">
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-val" id="stat-depts">39</div>
-            <div class="stat-name">Departments</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val">20,000+</div>
-            <div class="stat-name">HD Video Lectures</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val">Free</div>
-            <div class="stat-name">Official Open Access</div>
-          </div>
-        </div>
 
-        <div class="section-block">
-          <div class="section-header">
-            <h3 class="section-title">Popular Courses</h3>
-            <button class="link-btn" onclick="switchTab('courses')">View All</button>
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-val" id="stat-courses">512+</div>
+              <div class="stat-name">Academic Courses</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" id="stat-depts">39</div>
+              <div class="stat-name">Departments</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val">20,000+</div>
+              <div class="stat-name">HD Video Lectures</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val">Free</div>
+              <div class="stat-name">Official Open Access</div>
+            </div>
           </div>
-          <div id="home-featured-grid" class="cards-grid"></div>
+
+          <div class="section-block">
+            <div class="section-header">
+              <h3 class="section-title">Popular Courses</h3>
+              <button class="link-btn" onclick="switchTab('courses')">View All &rarr;</button>
+            </div>
+            <div id="home-empty-featured-grid" class="cards-grid"></div>
+          </div>
         </div>
       </section>
 
@@ -175,46 +225,96 @@
         </div>
       </section>
 
-      <!-- 4. My Learning / Saved View -->
+      <!-- 4. My Learning View (Matches Android SavedFragment with Bookmarks, My Courses, and History) -->
       <section id="view-saved" class="view-panel">
         <div class="page-top">
-          <h2 class="page-title">My Learning</h2>
-          <p class="page-subtitle">Your saved courses and quick resume history.</p>
+          <div>
+            <h2 class="page-title">My Learning</h2>
+            <p class="page-subtitle">Your enrolled courses, bookmarks, and watch history.</p>
+          </div>
+          <!-- Segmented Filter Pills -->
+          <div class="segment-filter-bar">
+            <button class="segment-pill active" data-subtab="all">All</button>
+            <button class="segment-pill" data-subtab="courses">My Courses</button>
+            <button class="segment-pill" data-subtab="bookmarks">Bookmarks</button>
+            <button class="segment-pill" data-subtab="history">Watch History</button>
+          </div>
         </div>
 
-        <div id="saved-courses-grid" class="cards-grid"></div>
+        <!-- Populated State -->
+        <div id="saved-content-wrapper" class="saved-content-scroll">
+          <!-- Section 1: My Courses (Enrolled / Active Watching) -->
+          <div id="section-my-courses" class="learning-section">
+            <div class="section-header">
+              <h3 class="section-title">My Courses</h3>
+              <span id="count-my-courses" class="section-badge">0</span>
+            </div>
+            <div id="grid-my-courses" class="cards-grid"></div>
+          </div>
 
+          <!-- Section 2: Bookmarked Courses -->
+          <div id="section-bookmarked" class="learning-section">
+            <div class="section-header">
+              <h3 class="section-title">Bookmarked Courses</h3>
+              <span id="count-bookmarked" class="section-badge">0</span>
+            </div>
+            <div id="grid-bookmarked" class="cards-grid"></div>
+          </div>
+
+          <!-- Section 3: Watch History -->
+          <div id="section-history" class="learning-section">
+            <div class="section-header">
+              <div class="header-left">
+                <h3 class="section-title">Watch History</h3>
+                <span id="count-history" class="section-badge">0</span>
+              </div>
+              <button id="btn-clear-history" class="btn btn-outline btn-sm">Clear History</button>
+            </div>
+            <div id="list-watch-history" class="history-list"></div>
+          </div>
+        </div>
+
+        <!-- Empty State (Matches Android layout_empty_my_learning) -->
         <div id="saved-empty-state" class="empty-state-panel hidden">
           <img src="assets/il_my_learning.png" alt="My Learning" class="empty-art" onerror="this.style.display='none'">
-          <h3>No Saved Courses Yet</h3>
-          <p>Click Save on any course card to bookmark it here for quick access.</p>
+          <h3>No Courses Yet</h3>
+          <p>Bookmark courses or start watching lectures to build your personal learning library.</p>
           <button class="btn btn-primary" onclick="switchTab('courses')">Explore Courses</button>
         </div>
       </section>
 
-      <!-- 5. Handouts View -->
-      <section id="view-handouts" class="view-panel">
+      <!-- 5. Unified Resources View (Merged Handouts + Links + Tools) -->
+      <section id="view-resources" class="view-panel">
         <div class="courses-header">
           <div>
-            <h2 class="page-title">Course Handouts</h2>
-            <p class="page-subtitle">Official Virtual University study materials and PDF handouts.</p>
+            <h2 class="page-title">Resources</h2>
+            <p class="page-subtitle">Official VU Handouts, Portals, and Academic Tools</p>
           </div>
           <div class="search-box">
-            <input type="text" id="handout-search-input" placeholder="Search handouts by course code...">
+            <input type="text" id="resource-search-input" placeholder="Search handouts, portals, or tools...">
+            <button id="resource-search-clear" class="clear-btn hidden">&times;</button>
           </div>
         </div>
 
-        <div id="handouts-grid" class="cards-grid"></div>
-      </section>
-
-      <!-- 6. VU Portals & Links View -->
-      <section id="view-links" class="view-panel">
-        <div class="page-top">
-          <h2 class="page-title">VU Portals & Resources</h2>
-          <p class="page-subtitle">Direct access to official Virtual University of Pakistan portals.</p>
+        <!-- Sub-tab Selector for Resources -->
+        <div class="resources-subtabs-bar">
+          <button class="resource-tab-btn active" data-res-tab="handouts">Handouts (PDF)</button>
+          <button class="resource-tab-btn" data-res-tab="portals">VU Portals</button>
+          <button class="resource-tab-btn" data-res-tab="tools">Academic Tools</button>
         </div>
 
-        <div id="links-grid" class="cards-grid"></div>
+        <!-- Resources Content Area -->
+        <div id="resource-tab-handouts" class="res-tab-pane active">
+          <div id="handouts-grid" class="cards-grid"></div>
+        </div>
+
+        <div id="resource-tab-portals" class="res-tab-pane hidden">
+          <div id="portals-grid" class="cards-grid"></div>
+        </div>
+
+        <div id="resource-tab-tools" class="res-tab-pane hidden">
+          <div id="tools-grid" class="cards-grid"></div>
+        </div>
       </section>
     </main>
   </div>
