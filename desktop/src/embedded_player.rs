@@ -54,23 +54,40 @@ pub fn get_embed_url(playlist_id: &str, lecture_index: i32, first_video_id: Opti
     )
 }
 
-pub fn find_main_window_hwnd() -> Option<HWND> {
-    let title: Vec<u16> = "VU Course Hub\0".encode_utf16().collect();
-    let hwnd_raw = unsafe {
-        let h = windows_sys::Win32::UI::WindowsAndMessaging::FindWindowW(
-            std::ptr::null(),
-            title.as_ptr(),
-        );
-        if !h.is_null() {
-            h
-        } else {
-            windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow()
-        }
-    };
-    if hwnd_raw.is_null() {
-        None
+unsafe extern "system" fn enum_windows_callback(
+    hwnd: windows_sys::Win32::Foundation::HWND,
+    lparam: windows_sys::Win32::Foundation::LPARAM,
+) -> windows_sys::Win32::Foundation::BOOL {
+    let mut pid: u32 = 0;
+    windows_sys::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, &mut pid);
+    if pid == std::process::id()
+        && windows_sys::Win32::UI::WindowsAndMessaging::IsWindowVisible(hwnd) != 0
+    {
+        let result_ptr = lparam as *mut windows_sys::Win32::Foundation::HWND;
+        *result_ptr = hwnd;
+        0
     } else {
-        Some(HWND(hwnd_raw as *mut _))
+        1
+    }
+}
+
+pub fn find_main_window_hwnd() -> Option<HWND> {
+    let mut found_hwnd: windows_sys::Win32::Foundation::HWND = std::ptr::null_mut();
+    unsafe {
+        windows_sys::Win32::UI::WindowsAndMessaging::EnumWindows(
+            Some(enum_windows_callback),
+            &mut found_hwnd as *mut _ as isize,
+        );
+    }
+    if !found_hwnd.is_null() {
+        Some(HWND(found_hwnd as *mut _))
+    } else {
+        let fg = unsafe { windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow() };
+        if !fg.is_null() {
+            Some(HWND(fg as *mut _))
+        } else {
+            None
+        }
     }
 }
 
