@@ -57,7 +57,7 @@ pub fn get_embed_url(playlist_id: &str, lecture_index: i32, first_video_id: Opti
 unsafe extern "system" fn enum_windows_callback(
     hwnd: windows_sys::Win32::Foundation::HWND,
     lparam: windows_sys::Win32::Foundation::LPARAM,
-) -> windows_sys::Win32::Foundation::BOOL {
+) -> i32 {
     let mut pid: u32 = 0;
     windows_sys::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, &mut pid);
     if pid == std::process::id()
