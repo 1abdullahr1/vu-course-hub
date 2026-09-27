@@ -143,6 +143,15 @@ function getCourseThumbnail(course) {
   return "icons/icon.png";
 }
 
+// Realistic stable duration for lecture thumbnails (matches YouTube 45m-52m in screenshot)
+function getLectureDuration(courseCode, num) {
+  const codeSum = (courseCode || "VU").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const seed = (codeSum * 17 + num * 31) % 400;
+  const minutes = 45 + (seed % 7);
+  const seconds = (seed * 13) % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 // Generate Embed URL for YouTube
 function getEmbedUrl(playlistId, lectureIndex, firstVideoId) {
   const cleanPid = (playlistId || "").trim();
@@ -522,12 +531,45 @@ function renderPlayer() {
   const title = getCleanTitle(course);
   const dept = getDepartment(course);
   const totalLectures = Math.max(1, Math.min(course.videoCount || 45, 100));
+  const currentIndex = state.currentLectureIndex || 1;
+  const currentLecTitle = `${code}_Lecture${String(currentIndex).padStart(2, "0")}`;
 
-  document.getElementById("player-course-code").textContent = code;
-  document.getElementById("player-course-dept").textContent = dept;
-  document.getElementById("player-course-title").textContent = title;
-  document.getElementById("player-active-lec-title").textContent = `${code} - Lecture ${String(state.currentLectureIndex).padStart(2, "0")}`;
-  document.getElementById("playlist-count").textContent = `${totalLectures} lectures`;
+  // Update YouTube-style titles and channel metadata
+  const lecTitleEl = document.getElementById("player-active-lec-title");
+  if (lecTitleEl) lecTitleEl.textContent = currentLecTitle;
+
+  const subtitleEl = document.getElementById("player-course-subtitle");
+  if (subtitleEl) subtitleEl.textContent = `${title} • ${dept} • ${totalLectures} Lectures`;
+
+  const playlistTitleEl = document.getElementById("playlist-course-title");
+  if (playlistTitleEl) playlistTitleEl.textContent = `${code} ${title}`;
+
+  const playlistCountEl = document.getElementById("playlist-count");
+  if (playlistCountEl) playlistCountEl.textContent = `${currentIndex} / ${totalLectures}`;
+
+  // Legacy compatibility elements
+  const codeEl = document.getElementById("player-course-code");
+  if (codeEl) codeEl.textContent = code;
+  const deptEl = document.getElementById("player-course-dept");
+  if (deptEl) deptEl.textContent = dept;
+  const titleEl = document.getElementById("player-course-title");
+  if (titleEl) titleEl.textContent = title;
+
+  // Update Bookmark/Save button in toolbar
+  const btnBookmark = document.getElementById("btn-bookmark-current");
+  if (btnBookmark) {
+    const isSaved = state.savedCodes.has(code);
+    btnBookmark.textContent = isSaved ? "Saved" : "Save";
+    if (isSaved) {
+      btnBookmark.classList.add("saved");
+    } else {
+      btnBookmark.classList.remove("saved");
+    }
+    btnBookmark.onclick = () => {
+      toggleBookmark(course);
+      renderPlayer();
+    };
+  }
 
   // Hide placeholder and load iframe
   const iframe = document.getElementById("player-iframe");
@@ -544,24 +586,46 @@ function renderPlayer() {
     applyPlaybackRate(state.playbackSpeed);
   }, 750);
 
-  // Render Playlist Items
+  // Render Playlist Items matching YouTube playlist watch view in screenshot
   const listEl = document.getElementById("playlist-items-list");
   listEl.innerHTML = "";
 
+  const thumbUrl = getCourseThumbnail(course);
+
   for (let num = 1; num <= totalLectures; num++) {
     const isCurrent = num === state.currentLectureIndex;
+    const duration = getLectureDuration(code, num);
     const item = document.createElement("div");
     item.className = `playlist-item ${isCurrent ? "active" : ""}`;
+
     item.innerHTML = `
-      <div class="playlist-item-left">
-        <span class="lec-num">${String(num).padStart(2, "0")}</span>
-        <span class="lec-name">${code} - Lecture ${String(num).padStart(2, "0")}</span>
+      ${isCurrent 
+        ? `<div class="playlist-item-play-icon" title="Playing">
+             <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor">
+               <path d="M0 0l10 6-10 6z"/>
+             </svg>
+           </div>`
+        : `<span class="playlist-item-index">${num}</span>`
+      }
+      <div class="playlist-item-thumb-box">
+        <img src="${thumbUrl}" alt="${code} Lecture ${num}" class="playlist-item-thumb-img" onerror="this.onerror=null; this.src='icons/icon.png';">
+        <span class="playlist-item-duration">${duration}</span>
       </div>
-      <span class="lec-badge">${isCurrent ? "Playing" : "Play"}</span>
+      <div class="playlist-item-text">
+        <div class="playlist-item-title" title="${code}_Lecture${String(num).padStart(2, "0")}">${code}_Lecture${String(num).padStart(2, "0")}</div>
+        <div class="playlist-item-channel">Virtual University of Pakistan</div>
+      </div>
+      <button class="playlist-item-more-btn" title="Options">&#8942;</button>
     `;
-    item.onclick = () => {
+
+    item.onclick = (e) => {
+      if (e.target.closest(".playlist-item-more-btn")) {
+        e.stopPropagation();
+        return;
+      }
       playCourse(course, num);
     };
+
     listEl.appendChild(item);
 
     if (isCurrent) {
@@ -1134,6 +1198,14 @@ function initApp() {
   const btnClosePlaylist = document.getElementById("btn-close-playlist");
   if (btnTogglePlaylist) btnTogglePlaylist.onclick = () => togglePlaylist();
   if (btnClosePlaylist) btnClosePlaylist.onclick = () => togglePlaylist(true);
+
+  // YouTube Style Chips Click Handlers
+  document.querySelectorAll(".yt-chip").forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll(".yt-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+    };
+  });
 
   // Load Data
   loadCoursesData();
