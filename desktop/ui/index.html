@@ -202,11 +202,11 @@
         <div id="courses-grid" class="cards-grid"></div>
       </section>
 
-      <!-- 3. Lecture Player View (YouTube Watch Layout with Collapsible Playlist) -->
+      <!-- 3. Lecture Player View (with Collapsible Playlist, Explicit Fullscreen, and 1x-4x Speed Controls) -->
       <section id="view-player" class="view-panel">
         <div id="player-active-state" class="player-layout">
-          <!-- Top Row: Video Player + Playlist Card Side-by-Side (YouTube Watch Style) -->
-          <div class="player-top-row">
+          <!-- Left Column: Video & Controls -->
+          <div class="player-stage">
             <div class="video-container" id="video-container-box">
               <iframe
                 id="player-iframe"
@@ -222,47 +222,11 @@
               </div>
             </div>
 
-            <!-- Right Column: Collapsible Playlist Card (YouTube Style) -->
-            <aside class="player-playlist" id="player-playlist-panel">
-              <div class="playlist-header">
-                <div class="playlist-header-left">
-                  <h4 id="playlist-course-title" class="playlist-title">Course Playlist</h4>
-                  <div class="playlist-meta-line">
-                    <span id="playlist-channel-label">Virtual University of Pakistan</span>
-                    <span class="playlist-dot-separator">-</span>
-                    <span id="playlist-count" class="playlist-count">0 / 0</span>
-                  </div>
-                </div>
-                <div class="playlist-header-actions">
-                  <button class="playlist-action-btn" title="Options">&#8942;</button>
-                  <button id="btn-close-playlist" class="playlist-close-btn" title="Collapse Playlist">&times;</button>
-                </div>
-              </div>
-              <div id="playlist-items-list" class="playlist-scroll-list"></div>
-            </aside>
-          </div>
-
-          <!-- Bottom Row: Under-Video Details, Channel Row, Pill Toolbar, and Chips -->
-          <div class="video-bottom-details">
-            <h2 id="player-active-lec-title" class="yt-video-title">Lecture Title</h2>
-
-            <div class="yt-details-row">
-              <div class="yt-channel-info">
-                <div class="yt-avatar">VU</div>
-                <div class="yt-channel-text">
-                  <div class="yt-channel-heading">
-                    <span class="yt-channel-title">Virtual University of Pakistan</span>
-                    <span class="yt-verified-badge" title="Official Channel">&#10003;</span>
-                  </div>
-                  <span id="player-course-subtitle" class="yt-course-sub">Course Details</span>
-                </div>
-              </div>
-
-              <!-- Sleek Pill Toolbar Controls -->
-              <div class="player-toolbar">
-                <button id="btn-play-video" class="btn-yt-pill primary">Play</button>
-                <button id="btn-prev-lec" class="btn-yt-pill" title="Previous Lecture">&larr; Prev</button>
-                <button id="btn-next-lec" class="btn-yt-pill" title="Next Lecture">Next &rarr;</button>
+            <div class="player-toolbar">
+              <div class="toolbar-left">
+                <button id="btn-play-video" class="btn btn-primary btn-sm">Play</button>
+                <button id="btn-prev-lec" class="btn btn-secondary btn-sm" title="Previous Lecture">&larr; Prev</button>
+                <button id="btn-next-lec" class="btn btn-secondary btn-sm" title="Next Lecture">Next &rarr;</button>
 
                 <!-- Compact Speed Changer: [-] 1.0x [+] with range 1x to 4x -->
                 <div class="speed-stepper-control" title="Playback Speed (1x to 4x)">
@@ -270,36 +234,40 @@
                   <span id="speed-display" class="speed-label" title="Click to cycle speed">1.0x</span>
                   <button id="btn-speed-up" class="btn-stepper" title="Increase Speed">+</button>
                 </div>
+              </div>
 
-                <button id="btn-toggle-playlist" class="btn-yt-pill" title="Toggle Course Playlist">
+              <div class="toolbar-right">
+                <button id="btn-toggle-playlist" class="btn btn-secondary btn-sm" title="Toggle Course Playlist">
                   <span id="playlist-toggle-label">Hide Playlist</span>
                 </button>
-                <button id="btn-fullscreen" class="btn-yt-pill" title="Fullscreen Video">
+                <button id="btn-fullscreen" class="btn btn-secondary btn-sm" title="Fullscreen Video">
                   Fullscreen
                 </button>
-                <button id="btn-bookmark-current" class="btn-yt-pill" title="Save to My Learning">
-                  Save
-                </button>
-                <button id="btn-open-browser" class="btn-yt-pill outline" title="Open in YouTube">
-                  Open in Browser
-                </button>
+                <button id="btn-open-browser" class="btn btn-outline btn-sm">Open in Browser</button>
               </div>
             </div>
 
-            <!-- Chips Row (Matches the bottom chips in screenshot) -->
-            <div class="yt-chips-row">
-              <button class="yt-chip active">All</button>
-              <button class="yt-chip">From the series</button>
-              <button class="yt-chip">From Virtual University of Pakistan</button>
-              <button class="yt-chip">Lectures</button>
-              <button class="yt-chip-arrow" title="More">&gt;</button>
+            <div class="course-meta-box">
+              <div class="meta-tags">
+                <span id="player-course-code" class="chip chip-primary">CODE</span>
+                <span id="player-course-dept" class="meta-dept">Department</span>
+              </div>
+              <h3 id="player-course-title" class="meta-title">Course Title</h3>
+              <p id="player-active-lec-title" class="meta-lec">Lecture 01</p>
             </div>
-
-            <!-- Hidden compatibility elements to support any legacy JS references -->
-            <span id="player-course-code" style="display:none"></span>
-            <span id="player-course-dept" style="display:none"></span>
-            <span id="player-course-title" style="display:none"></span>
           </div>
+
+          <!-- Right Column: Collapsible Playlist -->
+          <aside class="player-playlist" id="player-playlist-panel">
+            <div class="playlist-header">
+              <div class="playlist-header-left">
+                <h4 class="playlist-title">Course Playlist</h4>
+                <span id="playlist-count" class="playlist-count">0 lectures</span>
+              </div>
+              <button id="btn-close-playlist" class="playlist-close-btn" title="Collapse Playlist">&times;</button>
+            </div>
+            <div id="playlist-items-list" class="playlist-scroll-list"></div>
+          </aside>
         </div>
 
         <div id="player-empty-state" class="empty-state-panel hidden">
