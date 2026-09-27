@@ -85,11 +85,13 @@ impl EmbeddedPlayer {
 
         let user_data = std::env::temp_dir().join("vu_course_hub_wv2");
         let _ = std::fs::create_dir_all(&user_data);
-        std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", &user_data);
-        std::env::set_var(
-            "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
-            "--autoplay-policy=no-user-gesture-required",
-        );
+        unsafe {
+            std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", &user_data);
+            std::env::set_var(
+                "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+                "--autoplay-policy=no-user-gesture-required",
+            );
+        }
 
         let (tx_env, rx_env) = mpsc::channel();
         let env_res = CreateCoreWebView2EnvironmentCompletedHandler::wait_for_async_operation(
