@@ -69,6 +69,20 @@ impl AppState {
         self.current_tab = Tab::Player;
     }
 
+    pub fn next_lecture(&mut self) -> Option<Lecture> {
+        let current_num = self.active_lecture.as_ref().map(|l| l.lecture_number)?;
+        let next = self.current_course_lectures.iter().find(|l| l.lecture_number == current_num + 1)?.clone();
+        self.active_lecture = Some(next.clone());
+        Some(next)
+    }
+
+    pub fn prev_lecture(&mut self) -> Option<Lecture> {
+        let current_num = self.active_lecture.as_ref().map(|l| l.lecture_number)?;
+        let prev = self.current_course_lectures.iter().find(|l| l.lecture_number == current_num - 1)?.clone();
+        self.active_lecture = Some(prev.clone());
+        Some(prev)
+    }
+
     pub fn toggle_theme(&mut self) {
         self.theme_mode = match self.theme_mode {
             ThemeMode::Light => ThemeMode::Dark,

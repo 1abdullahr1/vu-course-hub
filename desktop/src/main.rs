@@ -2,6 +2,7 @@
 
 mod data;
 mod models;
+mod player;
 mod state;
 mod theme;
 mod views;
@@ -14,6 +15,7 @@ use gpui::{
 };
 use crate::data::CourseData;
 use crate::models::{Course, Lecture};
+use crate::player::PlayerLauncher;
 
 pub struct EmbeddedAssets;
 
@@ -63,18 +65,58 @@ impl RootView {
 
     pub fn select_course(&mut self, course: Course, _window: &mut Window, cx: &mut Context<Self>) {
         let lectures = CourseData::generate_lectures(&course);
-        self.state.set_active_course(course, lectures);
+        self.state.set_active_course(course.clone(), lectures);
+        self.state.is_playing = true;
+        PlayerLauncher::play(&course.playlistId, 1, course.firstVideoId.as_deref());
         cx.notify();
     }
 
     pub fn select_lecture(&mut self, lecture: Lecture, _window: &mut Window, cx: &mut Context<Self>) {
-        self.state.active_lecture = Some(lecture);
+        let playlist_id = self.state.selected_course.as_ref().map(|c| c.playlistId.clone()).unwrap_or_default();
+        let first_id = self.state.selected_course.as_ref().and_then(|c| c.firstVideoId.clone());
+        self.state.active_lecture = Some(lecture.clone());
+        self.state.is_playing = true;
+        PlayerLauncher::play(&playlist_id, lecture.lecture_number, first_id.as_deref());
         cx.notify();
     }
 
-    pub fn toggle_play(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        self.state.is_playing = !self.state.is_playing;
-        cx.notify();
+    pub fn play_current_lecture(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        if let (Some(course), Some(lec)) = (&self.state.selected_course, &self.state.active_lecture) {
+            self.state.is_playing = true;
+            PlayerLauncher::play(&course.playlistId, lec.lecture_number, course.firstVideoId.as_deref());
+            cx.notify();
+        }
+    }
+
+    pub fn open_current_in_browser(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        if let (Some(course), Some(lec)) = (&self.state.selected_course, &self.state.active_lecture) {
+            PlayerLauncher::open_in_browser(&course.playlistId, lec.lecture_number, course.firstVideoId.as_deref());
+            cx.notify();
+        }
+    }
+
+    pub fn next_lecture(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(next_lec) = self.state.next_lecture() {
+            if let Some(course) = &self.state.selected_course {
+                self.state.is_playing = true;
+                PlayerLauncher::play(&course.playlistId, next_lec.lecture_number, course.firstVideoId.as_deref());
+            }
+            cx.notify();
+        }
+    }
+
+    pub fn prev_lecture(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(prev_lec) = self.state.prev_lecture() {
+            if let Some(course) = &self.state.selected_course {
+                self.state.is_playing = true;
+                PlayerLauncher::play(&course.playlistId, prev_lec.lecture_number, course.firstVideoId.as_deref());
+            }
+            cx.notify();
+        }
+    }
+
+    pub fn toggle_play(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.play_current_lecture(window, cx);
     }
 
     pub fn set_speed(&mut self, speed: f32, _window: &mut Window, cx: &mut Context<Self>) {

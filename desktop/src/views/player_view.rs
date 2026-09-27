@@ -16,12 +16,6 @@ pub fn render_player(
     let primary_color = theme.primary;
 
     if let (Some(course), Some(active_lecture)) = (&state.selected_course, &state.active_lecture) {
-        let yt_url = if let Some(first_id) = &course.firstVideoId {
-            format!("https://www.youtube.com/watch?v={}", first_id)
-        } else {
-            course.playlistUrl.clone().unwrap_or_else(|| "https://www.youtube.com".to_string())
-        };
-
         div()
             .flex()
             .w_full()
@@ -44,15 +38,22 @@ pub fn render_player(
                             .h(px(416.0))
                             .rounded_xl()
                             .bg(theme.black)
+                            .border_1()
+                            .border_color(border_color)
                             .flex()
                             .flex_col()
                             .items_center()
                             .justify_center()
                             .gap_4()
+                            .cursor_pointer()
+                            .hover(|s| s.border_color(primary_color))
+                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
+                                this.play_current_lecture(window, cx);
+                            }))
                             .child(
                                 div()
-                                    .w(px(64.0))
-                                    .h(px(64.0))
+                                    .w(px(72.0))
+                                    .h(px(72.0))
                                     .rounded_full()
                                     .bg(primary_color)
                                     .flex()
@@ -60,20 +61,44 @@ pub fn render_player(
                                     .justify_center()
                                     .text_color(theme.white)
                                     .font_weight(FontWeight::BOLD)
-                                    .text_xl()
-                                    .cursor_pointer()
+                                    .text_2xl()
                                     .hover(|s| s.opacity(0.85))
-                                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
-                                        this.toggle_play(window, cx);
-                                    }))
-                                    .child(if state.is_playing { "Pause" } else { "Play" })
+                                    .child("▶")
                             )
                             .child(
                                 div()
-                                    .text_color(theme.white)
+                                    .flex()
+                                    .flex_col()
+                                    .items_center()
+                                    .gap_1()
+                                    .child(
+                                        div()
+                                            .text_color(theme.white)
+                                            .font_weight(FontWeight::BOLD)
+                                            .text_lg()
+                                            .child(active_lecture.title.clone())
+                                    )
+                                    .child(
+                                        div()
+                                            .text_color(text_secondary)
+                                            .text_xs()
+                                            .child("Click to watch in HD Video Player")
+                                    )
+                            )
+                            .child(
+                                div()
+                                    .px_3()
+                                    .py_1()
+                                    .rounded_full()
+                                    .bg(if state.is_playing { theme.chip_bg } else { theme.surface_hover })
+                                    .text_color(if state.is_playing { primary_color } else { text_secondary })
+                                    .text_xs()
                                     .font_weight(FontWeight::BOLD)
-                                    .text_base()
-                                    .child(active_lecture.title.clone())
+                                    .child(if state.is_playing {
+                                        "Playing in Video Window (Click to re-open)"
+                                    } else {
+                                        "Ready to Play • Virtual University Official HD"
+                                    })
                             )
                     )
                     .child(
@@ -91,7 +116,7 @@ pub fn render_player(
                                 div()
                                     .flex()
                                     .items_center()
-                                    .gap_3()
+                                    .gap_2()
                                     .child(
                                         div()
                                             .px_4()
@@ -104,45 +129,61 @@ pub fn render_player(
                                             .cursor_pointer()
                                             .hover(|s| s.opacity(0.9))
                                             .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
-                                                this.toggle_play(window, cx);
+                                                this.play_current_lecture(window, cx);
                                             }))
-                                            .child(if state.is_playing { "Pause" } else { "Play" })
+                                            .child("▶ Play Video")
                                     )
                                     .child(
                                         div()
-                                            .text_color(text_secondary)
+                                            .px_3()
+                                            .py_2()
+                                            .rounded_lg()
+                                            .border_1()
+                                            .border_color(border_color)
+                                            .text_color(text_primary)
+                                            .font_weight(FontWeight::MEDIUM)
                                             .text_xs()
-                                            .child("00:00 / 45:00")
+                                            .cursor_pointer()
+                                            .hover(|s| s.bg(theme.surface_hover))
+                                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
+                                                this.prev_lecture(window, cx);
+                                            }))
+                                            .child("⏮ Prev")
+                                    )
+                                    .child(
+                                        div()
+                                            .px_3()
+                                            .py_2()
+                                            .rounded_lg()
+                                            .border_1()
+                                            .border_color(border_color)
+                                            .text_color(text_primary)
+                                            .font_weight(FontWeight::MEDIUM)
+                                            .text_xs()
+                                            .cursor_pointer()
+                                            .hover(|s| s.bg(theme.surface_hover))
+                                            .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
+                                                this.next_lecture(window, cx);
+                                            }))
+                                            .child("⏭ Next")
                                     )
                             )
                             .child(
-                                // Speed Controls
-                                div()
-                                    .flex()
-                                    .items_center()
-                                    .gap_2()
-                                    .child(speed_button(1.0, state.playback_speed, theme, cx))
-                                    .child(speed_button(1.25, state.playback_speed, theme, cx))
-                                    .child(speed_button(1.5, state.playback_speed, theme, cx))
-                                    .child(speed_button(2.0, state.playback_speed, theme, cx))
-                            )
-                            .child(
-                                // Open External YouTube Button
                                 div()
                                     .px_3()
                                     .py_2()
                                     .rounded_lg()
                                     .border_1()
                                     .border_color(border_color)
-                                    .text_color(text_primary)
+                                    .text_color(text_secondary)
                                     .font_weight(FontWeight::BOLD)
                                     .text_xs()
                                     .cursor_pointer()
                                     .hover(|s| s.bg(theme.surface_hover))
-                                    .on_mouse_down(gpui::MouseButton::Left, move |_event, _window, _cx| {
-                                        let _ = open::that(&yt_url);
-                                    })
-                                    .child("Open in YouTube")
+                                    .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
+                                        this.open_current_in_browser(window, cx);
+                                    }))
+                                    .child("↗ Open in Browser")
                             )
                     )
                     .child(
@@ -270,9 +311,20 @@ pub fn render_player(
                                     )
                                     .child(
                                         div()
-                                            .text_color(theme.text_muted)
-                                            .text_xs()
-                                            .child(lec.duration.clone())
+                                            .flex()
+                                            .items_center()
+                                            .gap_2()
+                                            .child(
+                                                div()
+                                                    .px_2()
+                                                    .py_1()
+                                                    .rounded_md()
+                                                    .bg(if is_active { primary_color } else { theme.surface_hover })
+                                                    .text_color(if is_active { theme.white } else { text_secondary })
+                                                    .text_xs()
+                                                    .font_weight(FontWeight::BOLD)
+                                                    .child(if is_active { "Playing" } else { "Play" })
+                                            )
                                     )
                             }))
                     )
@@ -321,27 +373,4 @@ pub fn render_player(
             )
             .into_any_element()
     }
-}
-
-fn speed_button(
-    speed: f32,
-    current_speed: f32,
-    theme: &Theme,
-    cx: &Context<RootView>,
-) -> impl IntoElement {
-    let is_selected = (current_speed - speed).abs() < 0.01;
-    div()
-        .px_2()
-        .py_1()
-        .rounded_md()
-        .bg(if is_selected { theme.primary } else { theme.surface_hover })
-        .text_color(if is_selected { theme.white } else { theme.text_secondary })
-        .text_xs()
-        .font_weight(FontWeight::BOLD)
-        .cursor_pointer()
-        .hover(|s| s.opacity(0.85))
-        .on_mouse_down(gpui::MouseButton::Left, cx.listener(move |this: &mut RootView, _event, window, cx| {
-            this.set_speed(speed, window, cx);
-        }))
-        .child(format!("{}x", speed))
 }

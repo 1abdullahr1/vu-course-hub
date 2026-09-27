@@ -118,6 +118,7 @@ pub fn render_home(
                                     .hover(|s| s.opacity(0.9))
                                     .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                         this.set_tab(Tab::Player, window, cx);
+                                        this.play_current_lecture(window, cx);
                                     }))
                                     .child("Resume Watching")
                             )
