@@ -15,7 +15,7 @@ impl CourseData {
 
         let mut depts: Vec<String> = courses
             .iter()
-            .map(|c| c.department.clone())
+            .map(|c| c.dept().to_string())
             .filter(|d| !d.is_empty())
             .collect();
         depts.sort();
@@ -26,9 +26,9 @@ impl CourseData {
         let handouts: Vec<Handout> = courses
             .iter()
             .map(|c| Handout {
-                course_code: c.courseCode.clone(),
+                course_code: c.display_code(),
                 title: c.clean_title(),
-                department: c.department.clone(),
+                department: c.dept().to_string(),
             })
             .collect();
 
@@ -86,12 +86,13 @@ impl CourseData {
     pub fn generate_lectures(course: &Course) -> Vec<Lecture> {
         let count = course.videoCount.unwrap_or(45).clamp(1, 100);
         let first_id = course.firstVideoId.clone().unwrap_or_else(|| "j37u6TtRNFQ".to_string());
+        let code = course.display_code();
 
         (1..=count)
             .map(|num| Lecture {
-                id: format!("{}_{}", course.courseCode, num),
+                id: format!("{}_{}", course.playlistId, num),
                 lecture_number: num,
-                title: format!("{} - Lecture {:02}", course.courseCode, num),
+                title: format!("{} - Lecture {:02}", code, num),
                 video_id: if num == 1 {
                     first_id.clone()
                 } else {

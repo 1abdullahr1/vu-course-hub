@@ -25,11 +25,11 @@ pub fn render_courses(
     let filtered_courses: Vec<&Course> = courses
         .iter()
         .filter(|c| {
-            let dept_match = dept_filter == "All" || c.department.eq_ignore_ascii_case(dept_filter);
+            let dept_match = dept_filter == "All" || c.dept().eq_ignore_ascii_case(dept_filter);
             let search_match = search_lower.is_empty()
-                || c.courseCode.to_lowercase().contains(&search_lower)
+                || c.code().to_lowercase().contains(&search_lower)
                 || c.title.to_lowercase().contains(&search_lower)
-                || c.department.to_lowercase().contains(&search_lower);
+                || c.dept().to_lowercase().contains(&search_lower);
             dept_match && search_match
         })
         .collect();
@@ -100,11 +100,13 @@ pub fn render_courses(
                 .flex_wrap()
                 .gap_4()
                 .overflow_y_scroll()
-                .children(filtered_courses.into_iter().take(60).map(|course| {
+                .children(filtered_courses.into_iter().map(|course| {
                     let course_clone = course.clone();
-                    let course_code = course.courseCode.clone();
-                    let is_saved = state.is_bookmarked(&course_code);
-                    let code_for_bookmark = course_code.clone();
+                    let course_id = course.id_or_code().to_string();
+                    let is_saved = state.is_bookmarked(&course_id);
+                    let code_for_bookmark = course_id.clone();
+                    let code_display = course.display_code();
+                    let dept_display = course.dept().to_string();
 
                     div()
                         .w(px(320.0))
@@ -137,7 +139,7 @@ pub fn render_courses(
                                                 .text_color(primary_color)
                                                 .font_weight(FontWeight::BOLD)
                                                 .text_xs()
-                                                .child(course.courseCode.clone())
+                                                .child(code_display)
                                         )
                                         .child(
                                             div()
@@ -165,7 +167,7 @@ pub fn render_courses(
                                     div()
                                         .text_color(text_secondary)
                                         .text_xs()
-                                        .child(course.department.clone())
+                                        .child(dept_display)
                                 )
                         )
                         .child(

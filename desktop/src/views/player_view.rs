@@ -170,13 +170,13 @@ pub fn render_player(
                                             .text_color(primary_color)
                                             .font_weight(FontWeight::BOLD)
                                             .text_xs()
-                                            .child(course.courseCode.clone())
+                                            .child(course.display_code())
                                     )
                                     .child(
                                         div()
                                             .text_color(text_secondary)
                                             .text_xs()
-                                            .child(course.department.clone())
+                                            .child(course.dept().to_string())
                                     )
                             )
                             .child(

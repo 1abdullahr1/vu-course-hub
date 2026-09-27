@@ -73,7 +73,7 @@ pub fn render_home(
                                             .text_color(primary_color)
                                             .font_weight(FontWeight::BOLD)
                                             .text_sm()
-                                            .child(course.courseCode.clone())
+                                            .child(course.display_code())
                                     )
                                     .child(
                                         div()
@@ -87,7 +87,7 @@ pub fn render_home(
                                 div()
                                     .text_color(text_secondary)
                                     .text_xs()
-                                    .child(course.department.clone())
+                                    .child(course.dept().to_string())
                             )
                     )
                     .child(
@@ -153,6 +153,11 @@ pub fn render_home(
                     .border_color(border_color)
                     .gap_4()
                     .child(
+                        gpui::img("il_learn.png")
+                            .w(px(220.0))
+                            .h(px(160.0))
+                    )
+                    .child(
                         div()
                             .text_color(text_primary)
                             .font_weight(FontWeight::BOLD)
@@ -165,7 +170,7 @@ pub fn render_home(
                             .text_sm()
                             .text_center()
                             .max_w(px(460.0))
-                            .child("You have not started any course yet. Browse through 190+ courses across Computer Science, Management, Math, and Sciences.")
+                            .child("You have not started any course yet. Browse through 500+ courses across Computer Science, Management, Math, and Sciences.")
                     )
                     .child(
                         div()
@@ -182,7 +187,7 @@ pub fn render_home(
                             .on_mouse_down(gpui::MouseButton::Left, cx.listener(|this: &mut RootView, _event, window, cx| {
                                 this.set_tab(Tab::Courses, window, cx);
                             }))
-                            .child("Explore 190+ Courses")
+                            .child("Explore 500+ Courses")
                     )
                     .into_any_element()
             }

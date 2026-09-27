@@ -6,13 +6,38 @@ mod state;
 mod theme;
 mod views;
 
+use std::borrow::Cow;
 use gpui::prelude::*;
 use gpui::{
-    App, Bounds, Context, Render, TitlebarOptions, Window, WindowBounds, WindowOptions,
+    App, AssetSource, Bounds, Context, Render, Result, SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions,
     div, point, px, size,
 };
 use crate::data::CourseData;
 use crate::models::{Course, Lecture};
+
+pub struct EmbeddedAssets;
+
+impl AssetSource for EmbeddedAssets {
+    fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
+        let clean = path.trim_start_matches('/');
+        match clean {
+            "il_learn.png" | "assets/il_learn.png" => {
+                Ok(Some(Cow::Borrowed(include_bytes!("../assets/il_learn.png"))))
+            }
+            "il_my_learning.png" | "assets/il_my_learning.png" => {
+                Ok(Some(Cow::Borrowed(include_bytes!("../assets/il_my_learning.png"))))
+            }
+            _ => Ok(None),
+        }
+    }
+
+    fn list(&self, _path: &str) -> Result<Vec<SharedString>> {
+        Ok(vec![
+            "il_learn.png".into(),
+            "il_my_learning.png".into(),
+        ])
+    }
+}
 use crate::state::{AppState, Tab};
 use crate::views::{
     courses_view, handouts_view, home_view, links_view, player_view, saved_view, sidebar,
@@ -133,7 +158,7 @@ impl Render for RootView {
 }
 
 fn main() {
-    let app = gpui_platform::application();
+    let app = gpui_platform::application().with_assets(EmbeddedAssets);
     app.run(|cx: &mut App| {
         let bounds = Bounds {
             origin: point(px(80.0), px(60.0)),

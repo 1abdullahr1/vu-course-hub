@@ -47,7 +47,7 @@ pub fn render_handouts(
                 .flex_col()
                 .gap_3()
                 .overflow_y_scroll()
-                .children(handouts.iter().take(60).map(|item| {
+                .children(handouts.iter().map(|item| {
                     let query = format!("{} {} VU handouts filetype:pdf", item.course_code, item.title);
                     let encoded_url = format!("https://www.google.com/search?q={}", urlencoding::encode(&query));
 

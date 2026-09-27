@@ -19,7 +19,7 @@ pub fn render_saved(
 
     let bookmarked_list: Vec<&Course> = all_courses
         .iter()
-        .filter(|c| state.is_bookmarked(&c.courseCode))
+        .filter(|c| state.is_bookmarked(c.id_or_code()))
         .collect();
 
     div()
@@ -63,6 +63,11 @@ pub fn render_saved(
                     .border_color(border_color)
                     .gap_4()
                     .child(
+                        gpui::img("il_my_learning.png")
+                            .w(px(220.0))
+                            .h(px(160.0))
+                    )
+                    .child(
                         div()
                             .text_color(text_primary)
                             .font_weight(FontWeight::BOLD)
@@ -105,7 +110,9 @@ pub fn render_saved(
                     .overflow_y_scroll()
                     .children(bookmarked_list.into_iter().map(|course| {
                         let course_clone = course.clone();
-                        let code_for_bookmark = course.courseCode.clone();
+                        let code_for_bookmark = course.id_or_code().to_string();
+                        let code_display = course.display_code();
+                        let dept_display = course.dept().to_string();
 
                         div()
                             .w(px(320.0))
@@ -138,7 +145,7 @@ pub fn render_saved(
                                                     .text_color(primary_color)
                                                     .font_weight(FontWeight::BOLD)
                                                     .text_xs()
-                                                    .child(course.courseCode.clone())
+                                                    .child(code_display)
                                             )
                                             .child(
                                                 div()
@@ -166,7 +173,7 @@ pub fn render_saved(
                                         div()
                                             .text_color(text_secondary)
                                             .text_xs()
-                                            .child(course.department.clone())
+                                            .child(dept_display)
                                     )
                             )
                             .child(
