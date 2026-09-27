@@ -57,10 +57,20 @@ const officialLinks = [
   }
 ];
 
+// Helper to get Tauri invoke function across different Tauri injection setups
+function getTauriInvoke() {
+  if (window.__TAURI__) {
+    if (typeof window.__TAURI__.invoke === "function") return window.__TAURI__.invoke;
+    if (window.__TAURI__.tauri && typeof window.__TAURI__.tauri.invoke === "function") return window.__TAURI__.tauri.invoke;
+  }
+  return null;
+}
+
 // Open URL externally via Tauri shell / Rust command / browser
 function openExternal(url) {
-  if (window.__TAURI__ && window.__TAURI__.invoke) {
-    window.__TAURI__.invoke("open_in_browser", { url }).catch(() => {
+  const invoke = getTauriInvoke();
+  if (invoke) {
+    invoke("open_in_browser", { url }).catch(() => {
       window.open(url, "_blank");
     });
   } else {
@@ -499,8 +509,9 @@ function renderLinksView() {
 // Load Courses Data from Tauri Backend or Local Assets
 async function loadCoursesData() {
   try {
-    if (window.__TAURI__ && window.__TAURI__.invoke) {
-      const raw = await window.__TAURI__.invoke("get_courses");
+    const invoke = getTauriInvoke();
+    if (invoke) {
+      const raw = await invoke("get_courses");
       state.courses = JSON.parse(raw);
     } else {
       const resp = await fetch("assets/courses.json");
