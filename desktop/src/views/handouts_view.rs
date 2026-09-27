@@ -1,5 +1,5 @@
 use gpui::prelude::*;
-use gpui::{FontWeight, div, px};
+use gpui::{FontWeight, div};
 use crate::models::Handout;
 use crate::theme::Theme;
 

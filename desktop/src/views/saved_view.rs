@@ -1,5 +1,5 @@
 use gpui::prelude::*;
-use gpui::{Context, FontWeight, Window, div, px};
+use gpui::{Context, FontWeight, div, px};
 use crate::RootView;
 use crate::models::Course;
 use crate::state::{AppState, Tab};

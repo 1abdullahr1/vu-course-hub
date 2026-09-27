@@ -1,7 +1,10 @@
 use std::cell::RefCell;
 use std::sync::mpsc;
 use webview2_com::Microsoft::Web::WebView2::Win32::*;
-use webview2_com::*;
+use webview2_com::{
+    CreateCoreWebView2ControllerCompletedHandler,
+    CreateCoreWebView2EnvironmentCompletedHandler,
+};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{E_POINTER, HWND, RECT};
 
@@ -61,7 +64,7 @@ pub fn find_main_window_hwnd() -> Option<HWND> {
         if !h.is_null() {
             h
         } else {
-            windows_sys::Win32::UI::WindowsAndMessaging::GetActiveWindow()
+            windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow()
         }
     };
     if hwnd_raw.is_null() {
@@ -72,7 +75,7 @@ pub fn find_main_window_hwnd() -> Option<HWND> {
 }
 
 impl EmbeddedPlayer {
-    pub fn init(hwnd: HWND) -> Result<Self, String> {
+    pub fn init(hwnd: HWND) -> std::result::Result<Self, String> {
         unsafe {
             let _ = windows::Win32::System::Com::CoInitializeEx(
                 None,
