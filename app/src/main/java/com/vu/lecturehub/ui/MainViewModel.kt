@@ -12,6 +12,7 @@ import com.vu.lecturehub.data.model.FilterItem
 import com.vu.lecturehub.data.model.FilterState
 import com.vu.lecturehub.data.model.SkillDefinitions
 import com.vu.lecturehub.data.repository.CourseRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -51,7 +52,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repository.initializeDatabaseIfNeeded()
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             repository.allCourses.collectLatest { list ->
                 rawCoursesList = list
                 if (_departments.value.isNullOrEmpty() && list.isNotEmpty()) {

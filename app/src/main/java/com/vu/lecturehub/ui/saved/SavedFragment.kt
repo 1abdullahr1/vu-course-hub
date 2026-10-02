@@ -72,19 +72,19 @@ class SavedFragment : Fragment() {
         binding.rvYourCourses.apply {
             layoutManager = GridLayoutManager(context, 2)
             adapter = yourCoursesAdapter
-            setHasFixedSize(false)
+            setHasFixedSize(true)
         }
 
         binding.rvBookmarkedCourses.apply {
             layoutManager = GridLayoutManager(context, 2)
             adapter = bookmarkedAdapter
-            setHasFixedSize(false)
+            setHasFixedSize(true)
         }
 
         binding.rvRecentlyWatched.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = historyAdapter
-            setHasFixedSize(false)
+            setHasFixedSize(true)
         }
     }
 

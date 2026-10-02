@@ -46,10 +46,10 @@ class SplashActivity : AppCompatActivity() {
             proceedToNext()
         }
 
-        // Automatically transition after animation
+        // Fast smooth transition to main app
         handler.postDelayed({
             proceedToNext()
-        }, 2200)
+        }, 500)
     }
 
     private fun proceedToNext() {

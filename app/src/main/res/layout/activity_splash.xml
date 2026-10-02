@@ -6,26 +6,25 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF">
 
-    <!-- Centered Lottie Animation from Online Learning Platform -->
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottie_splash"
-        android:layout_width="280dp"
-        android:layout_height="280dp"
+    <!-- Native Branded Vector Logo (Zero Lottie overhead) -->
+    <ImageView
+        android:id="@+id/iv_splash_logo"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/ic_launcher_foreground"
         app:layout_constraintBottom_toTopOf="@id/tv_splash_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        app:lottie_rawRes="@raw/splash_learning" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <!-- App Title: VU OCW -->
     <TextView
         android:id="@+id/tv_splash_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:fontFamily="sans-serif-black"
         android:letterSpacing="0.05"
         android:text="VU OCW"
@@ -35,7 +34,7 @@
         app:layout_constraintBottom_toTopOf="@id/tv_splash_subtitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/lottie_splash" />
+        app:layout_constraintTop_toBottomOf="@id/iv_splash_logo" />
 
     <!-- App Subtitle -->
     <TextView

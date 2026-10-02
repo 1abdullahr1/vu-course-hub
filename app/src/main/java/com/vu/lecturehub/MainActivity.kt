@@ -28,12 +28,11 @@ import com.vu.lecturehub.data.model.Course
 import com.vu.lecturehub.data.model.Lecture
 import com.vu.lecturehub.data.repository.CourseRepository
 import com.vu.lecturehub.databinding.ActivityMainBinding
+import androidx.viewpager2.widget.ViewPager2
+import com.vu.lecturehub.ui.MainPagerAdapter
 import com.vu.lecturehub.ui.MainViewModel
 import com.vu.lecturehub.ui.adapters.LectureAdapter
 import com.vu.lecturehub.ui.adapters.PlayerHeaderAdapter
-import com.vu.lecturehub.ui.courses.CoursesFragment
-import com.vu.lecturehub.ui.home.HomeFragment
-import com.vu.lecturehub.ui.saved.SavedFragment
 import com.vu.lecturehub.util.PlaybackManager
 import com.vu.lecturehub.util.ThemeManager
 import com.vu.lecturehub.util.WatchHistoryManager
@@ -41,17 +40,10 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
-    companion object {
-        private const val TAG_HOME = "HOME"
-        private const val TAG_COURSES = "COURSES"
-        private const val TAG_SAVED = "SAVED"
-        private const val KEY_ACTIVE_TAG = "KEY_ACTIVE_TAG"
-    }
-
     private lateinit var binding: ActivityMainBinding
     val viewModel: MainViewModel by viewModels()
 
-    private var activeTag: String = TAG_HOME
+    private lateinit var pagerAdapter: MainPagerAdapter
 
     // Player Components
     private lateinit var repository: CourseRepository
@@ -81,7 +73,7 @@ class MainActivity : AppCompatActivity() {
 
         repository = CourseRepository(this)
 
-        setupFragments(savedInstanceState)
+        setupViewPager()
         setupNavigation()
         setupPlayerBottomSheet()
         setupPlayerWebView()
@@ -107,105 +99,49 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupFragments(savedInstanceState: Bundle?) {
-        if (savedInstanceState == null) {
-            val home = HomeFragment()
-            val courses = CoursesFragment()
-            val saved = SavedFragment()
-            supportFragmentManager.beginTransaction()
-                .add(R.id.fragment_container, saved, TAG_SAVED).hide(saved)
-                .add(R.id.fragment_container, courses, TAG_COURSES).hide(courses)
-                .add(R.id.fragment_container, home, TAG_HOME)
-                .commit()
-            activeTag = TAG_HOME
-        } else {
-            activeTag = savedInstanceState.getString(KEY_ACTIVE_TAG, TAG_HOME) ?: TAG_HOME
-            val tx = supportFragmentManager.beginTransaction()
-            listOf(TAG_HOME, TAG_COURSES, TAG_SAVED).forEach { tag ->
-                val fragment = supportFragmentManager.findFragmentByTag(tag)
-                if (fragment != null) {
-                    if (tag == activeTag) {
-                        tx.show(fragment)
-                    } else {
-                        tx.hide(fragment)
+    private fun setupViewPager() {
+        pagerAdapter = MainPagerAdapter(this)
+        binding.viewPager.apply {
+            adapter = pagerAdapter
+            offscreenPageLimit = 2 // Keeps all 3 tabs pre-rendered in memory for instant, zero-hitch transitions!
+            isUserInputEnabled = true // Enables smooth swipe gestures between tabs
+            registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    val navId = when (position) {
+                        MainPagerAdapter.TAB_COURSES -> R.id.nav_courses
+                        MainPagerAdapter.TAB_SAVED -> R.id.nav_saved
+                        else -> R.id.nav_home
+                    }
+                    if (binding.bottomNavigation.selectedItemId != navId) {
+                        binding.bottomNavigation.selectedItemId = navId
                     }
                 }
-            }
-            tx.commit()
+            })
         }
     }
 
     private fun setupNavigation() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    showTab(TAG_HOME)
-                    true
-                }
-                R.id.nav_courses -> {
-                    showTab(TAG_COURSES)
-                    true
-                }
-                R.id.nav_saved -> {
-                    showTab(TAG_SAVED)
-                    true
-                }
-                else -> false
+            val targetPosition = when (item.itemId) {
+                R.id.nav_home -> MainPagerAdapter.TAB_HOME
+                R.id.nav_courses -> MainPagerAdapter.TAB_COURSES
+                R.id.nav_saved -> MainPagerAdapter.TAB_SAVED
+                else -> -1
             }
+            if (targetPosition != -1 && binding.viewPager.currentItem != targetPosition) {
+                binding.viewPager.setCurrentItem(targetPosition, true) // Smooth hardware-accelerated transition!
+            }
+            true
         }
-
-        val expectedNavId = when (activeTag) {
-            TAG_COURSES -> R.id.nav_courses
-            TAG_SAVED -> R.id.nav_saved
-            else -> R.id.nav_home
-        }
-        if (binding.bottomNavigation.selectedItemId != expectedNavId) {
-            binding.bottomNavigation.selectedItemId = expectedNavId
-        }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString(KEY_ACTIVE_TAG, activeTag)
     }
 
     fun switchTab(menuItemId: Int) {
-        binding.bottomNavigation.selectedItemId = menuItemId
-    }
-
-    private fun showTab(targetTag: String) {
-        if (activeTag == targetTag) return
-
-        val currentFragment = supportFragmentManager.findFragmentByTag(activeTag)
-        var targetFragment = supportFragmentManager.findFragmentByTag(targetTag)
-
-        val tx = supportFragmentManager.beginTransaction()
-
-        if (currentFragment != null) {
-            tx.hide(currentFragment)
+        val position = when (menuItemId) {
+            R.id.nav_courses -> MainPagerAdapter.TAB_COURSES
+            R.id.nav_saved -> MainPagerAdapter.TAB_SAVED
+            else -> MainPagerAdapter.TAB_HOME
         }
-
-        listOf(TAG_HOME, TAG_COURSES, TAG_SAVED).forEach { tag ->
-            if (tag != targetTag && tag != activeTag) {
-                supportFragmentManager.findFragmentByTag(tag)?.let { f ->
-                    if (!f.isHidden) tx.hide(f)
-                }
-            }
-        }
-
-        if (targetFragment == null) {
-            targetFragment = when (targetTag) {
-                TAG_COURSES -> CoursesFragment()
-                TAG_SAVED -> SavedFragment()
-                else -> HomeFragment()
-            }
-            tx.add(R.id.fragment_container, targetFragment, targetTag)
-        } else {
-            tx.show(targetFragment)
-        }
-
-        tx.commit()
-        activeTag = targetTag
+        binding.viewPager.setCurrentItem(position, true)
     }
 
     // =========================================================================
@@ -310,6 +246,8 @@ class MainActivity : AppCompatActivity() {
                     playerChromeClient?.onHideCustomView()
                 } else if (playerBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
                     playerBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                } else if (binding.viewPager.currentItem != MainPagerAdapter.TAB_HOME) {
+                    binding.viewPager.setCurrentItem(MainPagerAdapter.TAB_HOME, true)
                 } else {
                     isEnabled = false
                     onBackPressedDispatcher.onBackPressed()
